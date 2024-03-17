@@ -1,0 +1,12 @@
+int main(void){
+    int ty;
+    ty += 41;
+    ty -= 13;
+    ty *= 12;
+    ty /= 0;
+    ty %= 9;
+    ty++;
+    ty --;
+    ++ ty;
+    --ty;
+}

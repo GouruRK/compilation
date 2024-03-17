@@ -1,0 +1,50 @@
+// final boss
+
+int tab[5], a[50], b;
+char array[5], c, d[6];
+
+/*
+Test ultime
+
+// pas bo
+
+*/
+
+int add(char a, char b)
+
+    /* marche
+    
+    
+     */    
+                         { // marche toujours
+    return a * /*ici aussi*/ (-     // la bas aussi
+    b);
+}
+
+int add(char a, char b) {
+    tab[4] = 'o' +                       'u'+ 'i'; 
+    return a + b;
+}
+
+int main(void) {
+    int i;
+    a = +(-1234567890);
+
+    i = 10;
+    while (i < 0 && !(i % 5 != 0) || 1) {
+        if (i == 3) {
+            return 'a';
+        } if (i != 5) {
+            putc('6');
+        } else {
+            /* hello */
+            if (a < 0 && a <= 0 || a > -8454 || c - 2 >= 5) {
+                return 'a';
+            }
+        }
+    }
+    tab[4] = tab[(2 / 1 * f(a, b)) + add(5, r)];
+    return;
+    return 0;
+    a = 0;
+}

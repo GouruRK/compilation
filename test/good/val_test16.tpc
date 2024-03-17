@@ -1,0 +1,9 @@
+int main(void) {
+    int val;
+    val = 0;
+    if (!val) {
+        return 1;
+    } else {
+        return 2;
+    }
+}

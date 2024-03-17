@@ -1,0 +1,2 @@
+void bissextile(int duration[], int size){}
+int main(void){}

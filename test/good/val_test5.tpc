@@ -1,0 +1,9 @@
+int main(void) {
+    if (0 < 5) // Si 0 < 5
+    {
+        return 0;
+    } else // sinon
+    {
+        return 1;
+    }
+}

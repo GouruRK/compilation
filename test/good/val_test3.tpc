@@ -1,0 +1,14 @@
+int f(int a, int b) {
+    return a + b;
+}
+
+int main(void) {
+    int res, a;
+    res = 0;
+    a = 5;
+    while (a != 0) {
+        res = res + f(a, a - 1);
+        a = a - 1;
+    }
+    return res;
+}

@@ -1,0 +1,3 @@
+int main(void) {
+    days[0] = duration[(now+span)%12];
+}

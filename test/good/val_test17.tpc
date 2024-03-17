@@ -1,0 +1,10 @@
+int main(void) {
+    char c;
+    c = '1';
+    c = 'a';
+    c = ' ';
+    c = '\n';
+    c = '\t';
+    c = '\r';
+    return 0;
+}

@@ -1,0 +1,8 @@
+void main(void) {
+    int tab[5], i;
+    i = 0;
+    while (i < 5) {
+        tab[i] = i;
+        i = i + 1;
+    }
+}

@@ -1,0 +1,5 @@
+int main(void){
+    int ty;
+    ty = 12;
+    ty = ty / 0;
+}
