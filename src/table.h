@@ -17,14 +17,14 @@ typedef struct {            // variable
     Value val;              // current value
 } Entry;
 
-typedef struct {            // symbols table
+typedef struct {            // symbol table
     int cur_len;            // curent length of the table
     int max_len;            // maximum length of the table
     int total_size;         // total size of stored variables in bytes
     Entry* array;           // entry array
 } Table;
 
-typedef struct {            // symbols table for functions
+typedef struct {            // symbol table for functions
     bool is_used;           // if the function is used
     int decl_line;          // declaration line
     int adr;                // address
@@ -33,7 +33,7 @@ typedef struct {            // symbols table for functions
     Table table;            // parameters and locals variables
 } Function;
 
-typedef struct {            // array of symbols table for functions
+typedef struct {            // array of symbol table for functions
     int cur_len;            // current number of stored functions
     int max_len;            // maximum length 
     Function* funcs;        // functions array
