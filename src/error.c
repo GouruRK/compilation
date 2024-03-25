@@ -24,6 +24,9 @@ Errors init_errors(void) {
 }
 
 static void add_default_error(Error err) {
+    if (errors.curlen == MAX_ERRORS) {
+        return;
+    }
     errors.errs[errors.curlen] = err;
     errors.curlen++;
     errors.exception |= (err.type == EXCEPTION);

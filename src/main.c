@@ -6,7 +6,7 @@
 #include "table.h"
 #include "error.h"
 
-Errors errors = (Errors){.curlen = 0, .exception = false};
+Errors errors;
 
 /**
  * @brief Display help message
@@ -32,6 +32,7 @@ int parse(FILE* source, Node** AST, bool print_tree) {
 }
 
 int main(int argc, char* argv[]) {
+    errors = init_errors();
     Args args = parse_args(argc, argv);
     if (args.err) {
         return 2;
