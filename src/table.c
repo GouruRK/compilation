@@ -4,6 +4,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "error.h"
+
+extern Errors errors;
+
 /**
  * @brief Compute size of variable in bytes based on its type
  * 
@@ -72,7 +76,10 @@ static int realloc_table(Table* table) {
  */
 static int insert_entry(Table* table, Entry entry) {
     if (!table) return 0;
-    if (is_in_table(table, entry.name) != -1) return 0;
+    if (is_in_table(table, entry.name) != -1) {
+        add_line_error(ALREADY_DECLARE, WARNING, entry.decl_line, entry.name);
+        return 1;
+    }
 
     if (table->cur_len == table->max_len) {
         if (!realloc_table(table)) return 0;
@@ -173,7 +180,10 @@ static int realloc_collection(FunctionCollection* collection) {
  */
 static int insert_function(FunctionCollection* collection, Function fun) {
     if (!collection) return 0;
-    if (is_in_collection(collection, fun.name) != -1) return 0;
+    if (is_in_collection(collection, fun.name) != -1) {
+        add_line_error(WARNING, ALREADY_DECLARE, fun.decl_line, fun.name);
+        return 1;
+    }
 
     if (collection->cur_len == collection->max_len) {
         if (!realloc_collection(collection)) return 0;

@@ -4,7 +4,7 @@ PARSER=parser
 LEXER=lexer
 EXEC=tpcc
 
-bin/$(EXEC): obj/$(LEXER).o obj/$(PARSER).o obj/tree.o obj/table.o obj/args.o obj/main.o
+bin/$(EXEC): obj/$(LEXER).o obj/$(PARSER).o obj/error.o obj/tree.o obj/table.o obj/args.o obj/main.o
 	@mkdir bin --parent
 	$(CC) -o $@ $^
 

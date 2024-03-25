@@ -4,6 +4,9 @@
 #include "args.h"
 #include "parser.h"
 #include "table.h"
+#include "error.h"
+
+Errors errors = (Errors){.curlen = 0, .exception = false};
 
 /**
  * @brief Display help message
@@ -55,6 +58,9 @@ int main(int argc, char* argv[]) {
                 puts("globals:");
                 print_table(globals);
                 print_collection(functions);
+            }
+            if (errors.curlen) {
+                print_errors();
             }
         }
 

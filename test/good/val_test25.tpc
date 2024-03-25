@@ -21,7 +21,7 @@ int add(char a, char b)
     b);
 }
 
-int add1(char a, char b) {
+int add(char a, char b) {
     tab[4] = 'o' +                       'u'+ 'i'; 
     return a + b;
 }
