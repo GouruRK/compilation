@@ -51,11 +51,12 @@ int main(int argc, char* argv[]) {
         err_functions = init_function_collection(&functions);
 
         if (err_functions && err_globals) {
-            create_tables(&globals, &functions, AST);
-            puts("globals:");
-            print_table(globals);
+            if (create_tables(&globals, &functions, AST)) {
+                puts("globals:");
+                print_table(globals);
+                print_collection(functions);
+            }
         }
-        print_collection(functions);
 
         free_collection(&functions);
         free_table(&globals);
