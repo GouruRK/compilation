@@ -36,7 +36,8 @@ typedef struct {            // symbol table for functions
     int decl_line;          // declaration line
     RType r_type;           // returned type
     char name[IDENT_LEN];   // function name
-    Table table;            // parameters and locals variables
+    Table parameters;       // parameters
+    Table locals;           // locals
 } Function;
 
 typedef struct {            // array of symbol table for functions
@@ -56,5 +57,8 @@ int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]);
 int insert_function(FunctionCollection* collection, Function fun);
 void free_table(Table* table);
 void free_collection(FunctionCollection* collection);
+int create_tables(Table* globals, FunctionCollection* collection, Node* node);
+void print_table(Table table);
+void print_collection(FunctionCollection collection);
 
 #endif

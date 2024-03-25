@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 static int compute_size(ValueType type, Node* node) {
     int size = 0;
@@ -111,8 +112,11 @@ Function init_function(Node* node) {
     fun.decl_line = node->lineno;
     assing_rtype(&fun, node);
     strcpy(fun.name, node->nextSibling->val.ident);
-    init_table(&fun.table);
-    init_param_list(&fun.table, node->nextSibling->nextSibling);
+    init_table(&fun.parameters);
+    init_table(&fun.locals);
+    if (node->nextSibling->nextSibling->label == ListTypVar) {
+        init_param_list(&fun.parameters, node->nextSibling->nextSibling->firstChild);
+    }
     return fun;
 }
 
@@ -175,7 +179,81 @@ void free_collection(FunctionCollection* collection) {
     if (!collection) return;
 
     for (int i = 0; i < collection->cur_len; i++) {
-        free(collection->funcs[i].table.array);
+        free(collection->funcs[i].parameters.array);
+        free(collection->funcs[i].locals.array);
     }
     free(collection->funcs);
+}
+
+static int decl_var(Table* table, ValueType type, Node* node) {
+    if (!node) {
+        return 1;
+    }
+    Entry entry = init_entry(type, node);
+    insert_entry(table, entry);
+    decl_var(table, type, node->nextSibling);
+    return 1;
+}
+
+static ValueType get_type(char ident[IDENT_LEN]) {
+    if (!strcmp("int", ident)) return NUMERIC;
+    return CHAR; 
+}
+
+static int decl_vars(Table* table, Node* node) {
+    if (!node) {
+        return 1;
+    }
+    ValueType type = get_type(node->val.ident);
+    decl_var(table, type, node->firstChild);
+    decl_vars(table, node->nextSibling);
+    return 0;
+}
+
+int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
+    static bool is_globals_done = false;
+
+    if (!node) {
+        return 1;
+    }
+
+    if (node->label == DeclVars) {
+        if (!is_globals_done) {
+            decl_vars(globals, node->firstChild);
+            is_globals_done = true;
+        } else {
+            decl_vars(&(collection->funcs[collection->cur_len - 1].locals), node->firstChild);
+        }
+    } else if (node->label == DeclFonct) {
+        insert_function(collection, init_function(node->firstChild->firstChild));
+    }
+    create_tables(globals, collection, node->nextSibling);
+    create_tables(globals, collection, node->firstChild);
+    return 1;
+}
+
+void print_table(Table table) {
+    for (int i = 0; i < table.cur_len; i++) {
+        printf("type: %s\tdecl_line: %3d\tsize: %5d\tname: %s\n",
+               table.array[i].type == NUMERIC ? "int": "char",
+               table.array[i].decl_line, 
+               table.array[i].size,
+               table.array[i].name);
+    }
+}
+
+void print_collection(FunctionCollection collection) {
+    for (int i = 0; i < collection.cur_len; i++) {
+        RType type = collection.funcs[i].r_type;
+        putchar('\n'); 
+        printf("%s\t%s - Parameters\n",
+                type == R_INT ? "int" : (type == R_CHAR ? "char": "void"),
+                collection.funcs[i].name);
+        print_table(collection.funcs[i].parameters);
+
+        printf("%s\t%s - Locals\n",
+                type == R_INT ? "int" : (type == R_CHAR ? "char": "void"),
+                collection.funcs[i].name);
+        print_table(collection.funcs[i].locals);
+    }
 }
