@@ -18,8 +18,14 @@ static int compute_size(ValueType type, Node* node) {
     return size*additionnal;
 }
 
-// node est le nom de la variable
-Entry init_entry(ValueType type, Node* node) {
+/**
+ * @brief Create an entry strucutre that gives intels about a variable
+ * 
+ * @param type type of variable
+ * @param node node contains the variable name
+ * @return created entry
+ */
+static Entry init_entry(ValueType type, Node* node) {
     Entry entry;
     entry.array = node->array;
     entry.decl_line = node->lineno;
@@ -68,7 +74,15 @@ static int realloc_table(Table* table) {
     return 1;
 }
 
-int insert_entry(Table* table, Entry entry) {
+/**
+ * @brief Insert an entry in the table
+ * 
+ * @param table table to insert
+ * @param entry entry to be inserted
+ * @return 1 if success
+ *         0 if error due to memory error
+ */
+static int insert_entry(Table* table, Entry entry) {
     if (!table) return 0;
     if (is_in_table(table, entry.name) != -1) return 0;
 
@@ -105,8 +119,13 @@ static void init_param_list(Table* table, Node* node) {
     init_param_list(table, node->nextSibling);
 }
 
-// node pointe sur le type de la fonction
-Function init_function(Node* node) {
+/**
+ * @brief Create a structure for intels about functions
+ * 
+ * @param node return type of function
+ * @return created function
+ */
+static Function init_function(Node* node) {
     Function fun;
     fun.is_used = false;
     fun.decl_line = node->lineno;
@@ -157,7 +176,15 @@ static int realloc_collection(FunctionCollection* collection) {
     return 1;
 }
 
-int insert_function(FunctionCollection* collection, Function fun) {
+/**
+ * @brief Insert function in collection
+ * 
+ * @param collection collection to insert
+ * @param fun function to insert
+ * @return 1 if success
+ *         0 if error due to memory error
+ */
+static int insert_function(FunctionCollection* collection, Function fun) {
     if (!collection) return 0;
     if (is_in_collection(collection, fun.name) != -1) return 0;
 
@@ -246,12 +273,12 @@ void print_collection(FunctionCollection collection) {
     for (int i = 0; i < collection.cur_len; i++) {
         RType type = collection.funcs[i].r_type;
         putchar('\n'); 
-        printf("%s\t%s - Parameters\n",
+        printf("%s\t%s - Parameters:\n",
                 type == R_INT ? "int" : (type == R_CHAR ? "char": "void"),
                 collection.funcs[i].name);
         print_table(collection.funcs[i].parameters);
 
-        printf("%s\t%s - Locals\n",
+        printf("%s\t%s - Locals:\n",
                 type == R_INT ? "int" : (type == R_CHAR ? "char": "void"),
                 collection.funcs[i].name);
         print_table(collection.funcs[i].locals);
