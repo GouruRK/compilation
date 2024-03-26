@@ -1,0 +1,14 @@
+int a;
+char b, c, d;
+int e, f;
+
+
+int g;
+
+int add(int a, int b) {
+    e = a + b;
+}
+
+int main(void) {
+    return 0;
+}

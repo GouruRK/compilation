@@ -53,3 +53,5 @@ dkms.conf
 
 # Other
 .vscode
+obj/*
+bin/*

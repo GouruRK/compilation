@@ -8,7 +8,7 @@ echo "Starting tests on test/good"
 
 for file in test/good/* ; do
     echo "Test sur $file"
-    ./bin/tpcas < $file 2> /dev/null
+    ./bin/tpcc < $file 2> /dev/null > /dev/null
     ACC=$?
     RES=$(($RES + 1 - $ACC))
     if [ 1 -eq $ACC ]; then
@@ -23,7 +23,7 @@ echo "Starting tests on test/syn-err"
 
 for file in test/syn-err/* ; do
     echo "Test sur $file"
-    ./bin/tpcas < $file 2> /dev/null
+    ./bin/tpcc < $file 2> /dev/null > /dev/null
     ACC=$?
     RES=$(($RES + $ACC))
     if [ 0 -eq $ACC ]; then

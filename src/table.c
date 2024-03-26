@@ -6,8 +6,6 @@
 
 #include "error.h"
 
-extern Errors errors;
-
 /**
  * @brief Compute size of variable in bytes based on its type
  * 

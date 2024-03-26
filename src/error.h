@@ -44,13 +44,6 @@ typedef struct {                // error collection
 } Errors;
 
 /**
- * @brief Initialise error collection
- * 
- * @return collection
- */
-Errors init_errors(void);
-
-/**
  * @brief Add an error to the collection with the line number where
  *        the error was triggered
  * 
@@ -75,5 +68,12 @@ void add_error(ErrorType type, ErrorCode code, char* message);
  * 
  */
 void print_errors(void);
+
+/**
+ * @brief Check if any errors has been registered
+ * 
+ * @return
+ */
+bool has_errors(void);
 
 #endif

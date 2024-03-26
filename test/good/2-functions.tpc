@@ -1,0 +1,15 @@
+int fun1(void) {
+    return 0;
+}
+
+char fun2(void) {
+    return 'a';
+}
+
+void fun3(void) {
+    return;
+}
+
+int main(void) {
+    return 0;
+}

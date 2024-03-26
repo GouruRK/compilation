@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 
-extern Errors errors;
+Errors errors = (Errors){
+    .curlen = 0,
+    .exception = false
+};
+bool is_init = false;
 
 static char* types[] = {
     [WARNING] = PURPLE "warning" RESET,
@@ -18,10 +22,6 @@ static char* codes[] = {
     [MAIN_MISSING] = "missing starting function",
     [CONFLICT_TYPES] = "conflict types with"
 };
-
-Errors init_errors(void) {
-    return (Errors){.curlen = 0, .exception = false};
-}
 
 static void add_default_error(Error err) {
     if (errors.curlen == MAX_ERRORS) {
@@ -49,7 +49,6 @@ void add_error(ErrorType type, ErrorCode code, char* message) {
     add_default_error(err);
 }
 
-
 void print_errors(void) {
     for (int i = 0; i < errors.curlen; i++) {
         ErrorCode code = errors.errs[i].code;
@@ -63,4 +62,8 @@ void print_errors(void) {
                     types[type], codes[code], errors.errs[i].message);
         }
     }
+}
+
+bool has_errors(void) {
+    return errors.curlen;
 }

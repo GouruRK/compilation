@@ -1,0 +1,7 @@
+int main(void) {
+    int a, b, c;
+    char d, e, f;
+    int g;
+
+    return 0;
+}
