@@ -57,6 +57,7 @@ static int realloc_table(Table* table) {
 
     Entry* temp = realloc(table->array, sizeof(Entry)*next_len);
     if (!temp) {
+        add_error(EXCEPTION, MEMORY_ERROR, "reallocation failed");
         return 0;
     }
     table->array = temp;
@@ -75,7 +76,7 @@ static int realloc_table(Table* table) {
 static int insert_entry(Table* table, Entry entry) {
     if (!table) return 0;
     if (is_in_table(table, entry.name) != -1) {
-        add_line_error(ALREADY_DECLARE, WARNING, entry.decl_line, entry.name);
+        add_line_error(EXCEPTION, ALREADY_DECLARE, entry.decl_line, entry.name);
         return 1;
     }
 
@@ -161,6 +162,7 @@ static int realloc_collection(FunctionCollection* collection) {
 
     Function* temp = (Function*)realloc(collection->funcs, sizeof(Function)*next_len);
     if (!temp) {
+        add_error(EXCEPTION, MEMORY_ERROR, "reallocation failed");
         return 0;
     }
     collection->funcs = temp;
@@ -179,8 +181,8 @@ static int realloc_collection(FunctionCollection* collection) {
 static int insert_function(FunctionCollection* collection, Function fun) {
     if (!collection) return 0;
     if (is_in_collection(collection, fun.name) != -1) {
-        add_line_error(WARNING, ALREADY_DECLARE, fun.decl_line, fun.name);
-        return 1;
+        add_line_error(EXCEPTION, ALREADY_DECLARE, fun.decl_line, fun.name);
+        return 1; // return 1 to continue
     }
 
     if (collection->cur_len == collection->max_len) {
@@ -201,15 +203,21 @@ static int insert_function(FunctionCollection* collection, Function fun) {
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_var(Table* table, ValueType type, Node* node) {
+static int decl_var(Table* table, ValueType type, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
     Entry entry = init_entry(type, node);
+
+    if (parameters && is_in_table(parameters, entry.name) != -1) {
+        add_line_error(EXCEPTION, ALREADY_DECLARE, entry.decl_line, entry.name);
+        return 1;
+    } 
+
     if (!insert_entry(table, entry)) {
         return 0;
     }
-    return decl_var(table, type, node->nextSibling);
+    return decl_var(table, type, node->nextSibling, parameters);
 }
 
 /**
@@ -231,15 +239,15 @@ static ValueType get_type(char ident[IDENT_LEN]) {
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_vars(Table* table, Node* node) {
+static int decl_vars(Table* table, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
     ValueType type = get_type(node->val.ident);
-    if (!decl_var(table, type, node->firstChild)) {
+    if (!decl_var(table, type, node->firstChild, parameters)) {
         return 0;
     }
-    return decl_vars(table, node->nextSibling);
+    return decl_vars(table, node->nextSibling, parameters);
 }
 
 int init_table(Table* table) {
@@ -250,6 +258,7 @@ int init_table(Table* table) {
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
     if (!table->array) {
+        add_error(EXCEPTION, MEMORY_ERROR, "allocation failed");
         table->max_len = 0;
         return 0;
     }
@@ -275,6 +284,7 @@ int init_function_collection(FunctionCollection* collection) {
     collection->funcs = (Function*)malloc(sizeof(Function)*DEFAULT_LENGTH);
 
     if (!collection->funcs) {
+        add_error(EXCEPTION, MEMORY_ERROR, "allocation failed");
         collection->max_len = 0;
         return 0;
     }
@@ -318,10 +328,12 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
     int err;
     if (node->label == DeclVars) {
         if (!is_globals_done) {
-            err = decl_vars(globals, node->firstChild);
+            err = decl_vars(globals, node->firstChild, NULL);
             is_globals_done = true;
         } else {
-            err = decl_vars(&(collection->funcs[collection->cur_len - 1].locals), node->firstChild);
+            err = decl_vars(&(collection->funcs[collection->cur_len - 1].locals),
+                            node->firstChild,
+                            &(collection->funcs[collection->cur_len - 1].parameters));
         }
         if (!err) return 0;
     } else if (node->label == DeclFonct) {
@@ -329,10 +341,10 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
             return 0;
         }
     }
-    if (!create_tables(globals, collection, node->nextSibling)) {
+    if (!create_tables(globals, collection, node->firstChild)) {
         return 0;
     }
-    return create_tables(globals, collection, node->firstChild);
+    return create_tables(globals, collection, node->nextSibling);
 }
 
 void print_table(Table table) {

@@ -13,7 +13,7 @@
 #define RESET "\x1b[0m"
 
 #define MAX_ERRORS 256
-#define ERROR_LEN 256
+#define ERROR_LEN 512
 
 typedef enum {                  // differents types of errors
     WARNING,
