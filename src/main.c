@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
     int res = parse(args.source, &AST, args.tree);
 
     if (res == 0) {
+        init_error(args.name);
         int err_globals, err_functions;
         Table globals;
         FunctionCollection functions;

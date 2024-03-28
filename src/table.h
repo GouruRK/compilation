@@ -19,6 +19,7 @@ typedef struct {            // variable
     bool array;             // if variable is an array
     bool is_used;           // if used
     int decl_line;          // declaration line
+    int decl_col;           // declaration column
     int size;               // size in bytes
     ValueType type;         // type of variable
     char name[IDENT_LEN];   // variable name
@@ -34,6 +35,7 @@ typedef struct {            // symbol table
 typedef struct {            // symbol table for functions
     bool is_used;           // if the function is used
     int decl_line;          // declaration line
+    int decl_col;           // declaration column
     RType r_type;           // returned type
     char name[IDENT_LEN];   // function name
     Table parameters;       // parameters

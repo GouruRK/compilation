@@ -36,6 +36,7 @@ Args parse_args(int argc, char* argv[]) {
     }
     if (optind < argc) {
         char* path = argv[optind];
+        args.name = path;
         args.source = fopen(path, "r");
         if (!(args.source)) {
             fprintf(stderr, "Cannot open file '%s'\n", path);

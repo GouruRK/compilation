@@ -18,7 +18,7 @@
 typedef enum {                  // differents types of errors
     WARNING,
     NOTE,
-    EXCEPTION,
+    ERROR,
 } ErrorType;
 
 typedef enum {                  // different code of errors
@@ -33,15 +33,24 @@ typedef struct {                // error
                                 // was created
     ErrorCode code;             // error code
     ErrorType type;             // error type
-    int line;                   // line where error was triggered
+    int line;                   // line where the error was triggered
+    int col;                    // column where the error was triggered
     char message[ERROR_LEN];    // associate message
 } Error;
 
 typedef struct {                // error collection
     bool exception;             // if at least one error is an exception
     int curlen;                 // current number of exceptions
+    char* file;                 // source file
     Error errs[MAX_ERRORS];     // collection of errors
 } Errors;
+
+/**
+ * @brief Initiate error collection
+ * 
+ * @param source current parsed file
+ */
+void init_error(char* source);
 
 /**
  * @brief Add an error to the collection with the line number where
@@ -52,7 +61,7 @@ typedef struct {                // error collection
  * @param line triggered line
  * @param message associate message
  */
-void add_line_error(ErrorType type, ErrorCode code, int line, char* message);
+void add_line_error(ErrorType type, ErrorCode code, int line, int col, char* message);
 
 /**
  * @brief Add an error to the collection

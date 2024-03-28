@@ -55,6 +55,7 @@ typedef union {
 
 typedef struct Node {
     bool array;
+    int colno;
     int lineno;
     label_t label;
     ValueType type;

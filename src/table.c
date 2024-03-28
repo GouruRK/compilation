@@ -13,6 +13,120 @@
  * @param node declaration node
  * @return size in bytes
  */
+static int compute_size(ValueType type, Node* node);
+
+/**
+ * @brief Create an entry strucutre that gives intels about a variable
+ * 
+ * @param type type of variable
+ * @param node node contains the variable name
+ * @return created entry
+ */
+static Entry init_entry(ValueType type, Node* node);
+
+/**
+ * @brief Allocate more memory for a table
+ * 
+ * @param table table to realloc
+ * @return 1 if success
+ *         0 if fail due to memory error
+ */
+static int realloc_table(Table* table);
+
+/**
+ * @brief Insert an entry in the table
+ * 
+ * @param table table to insert
+ * @param entry entry to be inserted
+ * @return 1 if success
+ *         0 if error due to memory error
+ */
+static int insert_entry(Table* table, Entry entry);
+
+/**
+ * @brief Assign to the given function its return type
+ * 
+ * @param fun function to assign
+ * @param node type node
+ */
+static void assing_rtype(Function* fun, Node* node);
+
+/**
+ * @brief Initiate parameters lists from functions
+ * 
+ * @param table table to store the parameters
+ * @param node head node of the list
+ * @return 1 if success
+ *         0 if error due to memory error
+ */
+static int init_param_list(Table* table, Node* node);
+
+/**
+ * @brief Create a structure for intels about functions
+ * 
+ * @param node return type of function
+ * @return created function
+ */
+static Function init_function(Node* node);
+
+/**
+ * @brief Allocate more memory for a collection
+ * 
+ * @param collection collection to re alloc
+ * @return 1 if success
+ *         0 if fail due to memory error 
+ */
+static int realloc_collection(FunctionCollection* collection);
+
+/**
+ * @brief Insert function in collection
+ * 
+ * @param collection collection to insert
+ * @param fun function to insert
+ * @return 1 if success
+ *         0 if error due to memory error
+ */
+static int insert_function(FunctionCollection* collection, Function fun);
+
+/**
+ * @brief Initialise a variable collection of given type
+ * 
+ * @param table table to store entries
+ * @param type type of the following variables
+ * @param node head node
+ * @return 1 if success
+ *         0 if fail due to memory error
+ */
+static int decl_var(Table* table, ValueType type, Node* node, Table* parameters);
+
+/**
+ * @brief Initialise a collection of variables of differents types
+ * 
+ * @param table table to store the variables
+ * @param node head node
+ * @return 1 if success
+ *         0 if fail due to memory error
+ */
+static int decl_vars(Table* table, Node* node, Table* parameters);
+
+/**
+ * @brief Get the type object from its identifiant
+ * 
+ * @param ident type identifiant
+ * @return type
+ */
+static ValueType get_type(char ident[IDENT_LEN]);
+
+/**
+ * @brief Initialise a collection of variables of differents types
+ * 
+ * @param table table to store the variables
+ * @param node head node
+ * @return 1 if success
+ *         0 if fail due to memory error
+ */
+static int decl_vars(Table* table, Node* node, Table* parameters);
+
 static int compute_size(ValueType type, Node* node) {
     int size = 0;
     int additionnal = 1;
@@ -27,17 +141,11 @@ static int compute_size(ValueType type, Node* node) {
     return size*additionnal;
 }
 
-/**
- * @brief Create an entry strucutre that gives intels about a variable
- * 
- * @param type type of variable
- * @param node node contains the variable name
- * @return created entry
- */
 static Entry init_entry(ValueType type, Node* node) {
     Entry entry;
     entry.array = node->array;
     entry.decl_line = node->lineno;
+    entry.decl_col = node->colno;
     entry.is_used = false;
     entry.size = compute_size(type, node);
     entry.type = type;
@@ -45,19 +153,12 @@ static Entry init_entry(ValueType type, Node* node) {
     return entry;
 }
 
-/**
- * @brief Allocate more memory for a table
- * 
- * @param table table to realloc
- * @return 1 if success
- *         0 if fail due to memory error
- */
 static int realloc_table(Table* table) {
     int next_len = table->max_len + DEFAULT_LENGTH;
 
     Entry* temp = realloc(table->array, sizeof(Entry)*next_len);
     if (!temp) {
-        add_error(EXCEPTION, MEMORY_ERROR, "reallocation failed");
+        add_error(ERROR, MEMORY_ERROR, NULL);
         return 0;
     }
     table->array = temp;
@@ -65,18 +166,11 @@ static int realloc_table(Table* table) {
     return 1;
 }
 
-/**
- * @brief Insert an entry in the table
- * 
- * @param table table to insert
- * @param entry entry to be inserted
- * @return 1 if success
- *         0 if error due to memory error
- */
 static int insert_entry(Table* table, Entry entry) {
     if (!table) return 0;
     if (is_in_table(table, entry.name) != -1) {
-        add_line_error(EXCEPTION, ALREADY_DECLARE, entry.decl_line, entry.name);
+        add_line_error(ERROR, ALREADY_DECLARE, entry.decl_line,
+                       entry.decl_col, entry.name);
         return 1;
     }
 
@@ -90,12 +184,6 @@ static int insert_entry(Table* table, Entry entry) {
     return 1;
 }
 
-/**
- * @brief Assign to the given function its return type
- * 
- * @param fun function to assign
- * @param node type node
- */
 static void assing_rtype(Function* fun, Node* node) {
     if (!strcmp(node->val.ident, "int")) {
         fun->r_type = R_INT;
@@ -106,23 +194,10 @@ static void assing_rtype(Function* fun, Node* node) {
     }
 }
 
-/**
- * @brief Initiate parameters lists from functions
- * 
- * @param table table to store the parameters
- * @param node head node of the list
- * @return 1 if success
- *         0 if error due to memory error
- */
 static int init_param_list(Table* table, Node* node) {
     if (!node) return 1;
     
-    ValueType type;
-    if (!strcmp(node->val.ident, "int")) {
-        type = NUMERIC;
-    } else {
-        type = CHAR;
-    }
+    ValueType type = get_type(node->val.ident);
     if (!insert_entry(table, init_entry(type, node->firstChild))) {
         return 0;
     }
@@ -130,39 +205,28 @@ static int init_param_list(Table* table, Node* node) {
     return 1;
 }
 
-/**
- * @brief Create a structure for intels about functions
- * 
- * @param node return type of function
- * @return created function
- */
 static Function init_function(Node* node) {
     Function fun;
     fun.is_used = false;
     fun.decl_line = node->lineno;
+    fun.decl_col = node->colno;
     assing_rtype(&fun, node);
     strcpy(fun.name, node->nextSibling->val.ident);
     init_table(&fun.parameters);
     init_table(&fun.locals);
     if (node->nextSibling->nextSibling->label == ListTypVar) {
-        init_param_list(&fun.parameters, node->nextSibling->nextSibling->firstChild);
+        init_param_list(&fun.parameters,
+                        node->nextSibling->nextSibling->firstChild);
     }
     return fun;
 }
 
-/**
- * @brief Allocate more memory for a collection
- * 
- * @param collection collection to re alloc
- * @return 1 if success
- *         0 if fail due to memory error 
- */
 static int realloc_collection(FunctionCollection* collection) {
     int next_len = collection->max_len + DEFAULT_LENGTH;
 
     Function* temp = (Function*)realloc(collection->funcs, sizeof(Function)*next_len);
     if (!temp) {
-        add_error(EXCEPTION, MEMORY_ERROR, "reallocation failed");
+        add_error(ERROR, MEMORY_ERROR, NULL);
         return 0;
     }
     collection->funcs = temp;
@@ -170,18 +234,11 @@ static int realloc_collection(FunctionCollection* collection) {
     return 1;
 }
 
-/**
- * @brief Insert function in collection
- * 
- * @param collection collection to insert
- * @param fun function to insert
- * @return 1 if success
- *         0 if error due to memory error
- */
 static int insert_function(FunctionCollection* collection, Function fun) {
     if (!collection) return 0;
     if (is_in_collection(collection, fun.name) != -1) {
-        add_line_error(EXCEPTION, ALREADY_DECLARE, fun.decl_line, fun.name);
+        add_line_error(ERROR, ALREADY_DECLARE, fun.decl_line, fun.decl_col,
+                       fun.name);
         return 1; // return 1 to continue
     }
 
@@ -194,15 +251,6 @@ static int insert_function(FunctionCollection* collection, Function fun) {
     return 1;
 }
 
-/**
- * @brief Initialise a variable collection of given type
- * 
- * @param table table to store entries
- * @param type type of the following variables
- * @param node head node
- * @return 1 if success
- *         0 if fail due to memory error
- */
 static int decl_var(Table* table, ValueType type, Node* node, Table* parameters) {
     if (!node) {
         return 1;
@@ -210,7 +258,8 @@ static int decl_var(Table* table, ValueType type, Node* node, Table* parameters)
     Entry entry = init_entry(type, node);
 
     if (parameters && is_in_table(parameters, entry.name) != -1) {
-        add_line_error(EXCEPTION, ALREADY_DECLARE, entry.decl_line, entry.name);
+        add_line_error(ERROR, ALREADY_DECLARE, entry.decl_line,
+                       entry.decl_col, entry.name);
         return 1;
     } 
 
@@ -220,25 +269,11 @@ static int decl_var(Table* table, ValueType type, Node* node, Table* parameters)
     return decl_var(table, type, node->nextSibling, parameters);
 }
 
-/**
- * @brief Get the type object from its identifiant
- * 
- * @param ident type identifiant
- * @return type
- */
 static ValueType get_type(char ident[IDENT_LEN]) {
     if (!strcmp("int", ident)) return NUMERIC;
     return CHAR; 
 }
 
-/**
- * @brief Initialise a collection of variables of differents types
- * 
- * @param table table to store the variables
- * @param node head node
- * @return 1 if success
- *         0 if fail due to memory error
- */
 static int decl_vars(Table* table, Node* node, Table* parameters) {
     if (!node) {
         return 1;
@@ -258,7 +293,7 @@ int init_table(Table* table) {
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
     if (!table->array) {
-        add_error(EXCEPTION, MEMORY_ERROR, "allocation failed");
+        add_error(ERROR, MEMORY_ERROR, NULL);
         table->max_len = 0;
         return 0;
     }
@@ -284,7 +319,7 @@ int init_function_collection(FunctionCollection* collection) {
     collection->funcs = (Function*)malloc(sizeof(Function)*DEFAULT_LENGTH);
 
     if (!collection->funcs) {
-        add_error(EXCEPTION, MEMORY_ERROR, "allocation failed");
+        add_error(ERROR, MEMORY_ERROR, NULL);
         collection->max_len = 0;
         return 0;
     }
