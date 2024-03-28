@@ -26,7 +26,7 @@ _start:
     call my_putchar
 
     ; test putint
-    mov dil, 2
+    mov rdi, 21
     call my_putint
     mov dil, 10 ; saut de ligne
     call my_putchar
