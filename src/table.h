@@ -18,6 +18,7 @@ typedef enum { // size of types in byte
 typedef struct {            // variable
     bool array;             // if variable is an array
     bool is_used;           // if used
+    int address;            // address
     int decl_line;          // declaration line
     int decl_col;           // declaration column
     int size;               // size in bytes
@@ -28,7 +29,6 @@ typedef struct {            // variable
 typedef struct {            // symbol table
     int cur_len;            // curent length of the table
     int max_len;            // maximum length of the table
-    int total_size;         // total size of stored variables in bytes
     Entry* array;           // entry array
 } Table;
 

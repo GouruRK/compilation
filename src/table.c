@@ -6,6 +6,8 @@
 
 #include "error.h"
 
+int total_bytes = 0;
+
 /**
  * @brief Compute size of variable in bytes based on its type
  * 
@@ -22,7 +24,7 @@ static int compute_size(ValueType type, Node* node);
  * @param node node contains the variable name
  * @return created entry
  */
-static Entry init_entry(ValueType type, Node* node);
+static Entry init_entry(ValueType type, Node* node, int last_address);
 
 /**
  * @brief Allocate more memory for a table
@@ -141,7 +143,7 @@ static int compute_size(ValueType type, Node* node) {
     return size*additionnal;
 }
 
-static Entry init_entry(ValueType type, Node* node) {
+static Entry init_entry(ValueType type, Node* node, int last_address) {
     Entry entry;
     entry.array = node->array;
     entry.decl_line = node->lineno;
@@ -150,6 +152,13 @@ static Entry init_entry(ValueType type, Node* node) {
     entry.size = compute_size(type, node);
     entry.type = type;
     strcpy(entry.name, node->val.ident);
+
+    if (last_address < 0) {
+        entry.address = -1;
+    } else {
+        entry.address = total_bytes;
+        total_bytes += entry.size;
+    }
     return entry;
 }
 
@@ -180,7 +189,6 @@ static int insert_entry(Table* table, Entry entry) {
 
     table->array[table->cur_len] = entry;
     table->cur_len++;
-    table->total_size += entry.size;
     return 1;
 }
 
@@ -198,7 +206,7 @@ static int init_param_list(Table* table, Node* node) {
     if (!node) return 1;
     
     ValueType type = get_type(node->val.ident);
-    if (!insert_entry(table, init_entry(type, node->firstChild))) {
+    if (!insert_entry(table, init_entry(type, node->firstChild, -1))) {
         return 0;
     }
     init_param_list(table, node->nextSibling);
@@ -255,7 +263,7 @@ static int decl_var(Table* table, ValueType type, Node* node, Table* parameters)
     if (!node) {
         return 1;
     }
-    Entry entry = init_entry(type, node);
+    Entry entry = init_entry(type, node, total_bytes);
 
     if (parameters && is_in_table(parameters, entry.name) != -1) {
         add_line_error(ERROR, ALREADY_DECLARE, entry.decl_line,
@@ -288,7 +296,6 @@ static int decl_vars(Table* table, Node* node, Table* parameters) {
 int init_table(Table* table) {
     if (!table) return 0;
 
-    table->total_size = 0;
     table->cur_len = 0;
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
@@ -384,11 +391,21 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
 
 void print_table(Table table) {
     for (int i = 0; i < table.cur_len; i++) {
-        printf("type: %4s | decl_line: %3d | size: %5d | name: %s\n",
-               table.array[i].type == NUMERIC ? "int": "char",
-               table.array[i].decl_line, 
-               table.array[i].size,
-               table.array[i].name);
+        if (table.array[i].address >= 0) {
+            printf("type: %4s | decl_line: %3d | size: %5d | address: %05xx | name: %s\n",
+                table.array[i].type == NUMERIC ? "int": "char",
+                table.array[i].decl_line, 
+                table.array[i].size,
+                table.array[i].address,
+                table.array[i].name);
+        } else {
+            printf("type: %4s | decl_line: %3d | size: %5d | name: %s\n",
+                table.array[i].type == NUMERIC ? "int": "char",
+                table.array[i].decl_line, 
+                table.array[i].size,
+                table.array[i].name);
+        }
+
     }
 }
 
