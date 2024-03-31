@@ -25,7 +25,6 @@ typedef enum {                  // different code of errors
     MEMORY_ERROR,
     ALREADY_DECLARE,        
     MAIN_MISSING,
-    CONFLICT_TYPES,
     WRONG_RTYPE,
     WRONG_PARAMETERS
 } ErrorCode;
@@ -41,7 +40,7 @@ typedef struct {                // error
 } Error;
 
 typedef struct {                // error collection
-    bool exception;             // if at least one error is an exception
+    bool fatal;                 // if at least one fatal error
     int curlen;                 // current number of exceptions
     char* file;                 // source file
     Error errs[MAX_ERRORS];     // collection of errors
@@ -54,25 +53,13 @@ typedef struct {                // error collection
  */
 void init_error(char* source);
 
-/**
- * @brief Add an error to the collection with the line number where
- *        the error was triggered
- * 
- * @param type error type
- * @param code error code
- * @param line triggered line
- * @param message associate message
- */
-void add_line_error(ErrorType type, ErrorCode code, int line, int col, char* message);
-
-/**
- * @brief Add an error to the collection
- * 
- * @param type error type
- * @param code error code
- * @param message associate message
- */
 void add_error(ErrorType type, ErrorCode code, char* message);
+void add_memory_error(void);
+void add_already_declared_error(char* symbol, int decl_line, int decl_col,
+                                int last_decl_line);
+
+void add_wrong_rtype_error(char* symbol, char* current_type,
+                           char* expected_type, int decl_line, int decl_col);
 
 /**
  * @brief Print errors contains in the error collection

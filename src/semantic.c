@@ -25,16 +25,26 @@ static void sort_tables(Table* globals, FunctionCollection* collection) {
     }
 }
 
+char* return_type[] = {
+    [R_CHAR] = "char",
+    [R_INT] = "int",
+    [R_VOID] = "void"
+};
+
 static void check_main(FunctionCollection* collection) {
     Function* start_fun = get_function(collection, "main");
     if (!start_fun) {
-        add_error(ERROR, MAIN_MISSING, "");
+        add_error(ERROR, MAIN_MISSING, "no start function found");
+        return;
     }
     if (start_fun->r_type != R_INT) {
-        add_error(WARNING, WRONG_RTYPE, "must be int");
+        add_wrong_rtype_error("main", return_type[start_fun->r_type],
+                              return_type[R_INT], start_fun->decl_line,
+                              start_fun->decl_col);
+        return;
     }
     if (start_fun->parameters.cur_len) {
-        add_error(ERROR, WRONG_PARAMETERS, "must be void");
+        add_error(ERROR, WRONG_PARAMETERS, "main must take no parameters");
     }
 }
 

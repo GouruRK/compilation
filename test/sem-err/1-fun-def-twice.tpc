@@ -1,0 +1,11 @@
+int add(char a, char b) {
+    return 10;
+}
+
+char add(void) {
+    return 'a';
+}
+
+int main(void) {
+    return 0;
+}

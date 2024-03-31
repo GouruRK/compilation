@@ -69,7 +69,7 @@ static int init_param_list(Table* table, Node* node);
  * @param node return type of function
  * @return created function
  */
-static Function init_function(Node* node);
+static int init_function(Function* fun, Node* node, Table* globals);
 
 /**
  * @brief Allocate more memory for a collection
@@ -183,7 +183,7 @@ static int realloc_table(Table* table) {
 
     Entry* temp = realloc(table->array, sizeof(Entry)*next_len);
     if (!temp) {
-        add_error(ERROR, MEMORY_ERROR, NULL);
+        add_memory_error();
         return 0;
     }
     table->array = temp;
@@ -193,9 +193,10 @@ static int realloc_table(Table* table) {
 
 static int insert_entry(Table* table, Entry entry) {
     if (!table) return 0;
-    if (is_in_table(table, entry.name) != -1) {
-        add_line_error(ERROR, ALREADY_DECLARE, entry.decl_line,
-                       entry.decl_col, entry.name);
+    int index;
+    if ((index = is_in_table(table, entry.name)) != -1) {
+        add_already_declared_error(entry.name, entry.decl_line,
+                       entry.decl_col, table->array[index].decl_col);
         return 1;
     }
 
@@ -231,20 +232,31 @@ static int init_param_list(Table* table, Node* node) {
     return 1;
 }
 
-static Function init_function(Node* node) {
-    Function fun;
-    fun.is_used = false;
-    fun.decl_line = node->lineno;
-    fun.decl_col = node->colno;
-    assing_rtype(&fun, node);
-    strcpy(fun.name, node->nextSibling->val.ident);
-    init_table(&fun.parameters);
-    init_table(&fun.locals);
-    if (node->nextSibling->nextSibling->label == ListTypVar) {
-        init_param_list(&fun.parameters,
-                        node->nextSibling->nextSibling->firstChild);
+static int init_function(Function* fun, Node* node, Table* globals) {
+    fun->is_used = false;
+    fun->decl_line = node->lineno;
+    fun->decl_col = node->colno;
+    assing_rtype(fun, node);
+    strcpy(fun->name, node->nextSibling->val.ident);
+
+    int index;
+    if ((index = is_in_table(globals, fun->name)) != -1) {  
+        add_already_declared_error(fun->name, fun->decl_line, fun->decl_col,
+                                   globals->array[index].decl_line);
     }
-    return fun;
+
+    if (!init_table(&fun->parameters)) {
+        return 0;
+    }
+    if (!init_table(&fun->locals)) {
+        free(fun->parameters.array);
+        return 0;
+    }
+    if (node->nextSibling->nextSibling->label == ListTypVar) {
+        return init_param_list(&fun->parameters,
+                               node->nextSibling->nextSibling->firstChild);
+    }
+    return 1;
 }
 
 static int realloc_collection(FunctionCollection* collection) {
@@ -252,7 +264,7 @@ static int realloc_collection(FunctionCollection* collection) {
 
     Function* temp = (Function*)realloc(collection->funcs, sizeof(Function)*next_len);
     if (!temp) {
-        add_error(ERROR, MEMORY_ERROR, NULL);
+        add_memory_error();
         return 0;
     }
     collection->funcs = temp;
@@ -262,9 +274,10 @@ static int realloc_collection(FunctionCollection* collection) {
 
 static int insert_function(FunctionCollection* collection, Function fun) {
     if (!collection) return 0;
-    if (is_in_collection(collection, fun.name) != -1) {
-        add_line_error(ERROR, ALREADY_DECLARE, fun.decl_line, fun.decl_col,
-                       fun.name);
+    int index;
+    if ((index = is_in_collection(collection, fun.name)) != -1) {
+        add_already_declared_error(fun.name, fun.decl_line, fun.decl_col,
+                                   collection->funcs[index].decl_line);
         return 1; // return 1 to continue
     }
 
@@ -281,13 +294,15 @@ static int decl_var(Table* table, ValueType type, Node* node, Table* parameters)
     if (!node) {
         return 1;
     }
-    Entry entry = init_entry(type, node, total_bytes);
 
-    if (parameters && is_in_table(parameters, entry.name) != -1) {
-        add_line_error(ERROR, ALREADY_DECLARE, entry.decl_line,
-                       entry.decl_col, entry.name);
+    Entry entry = init_entry(type, node, total_bytes);
+    int index;
+
+    if (parameters && (index = is_in_table(parameters, entry.name)) != -1) {
+        add_already_declared_error(entry.name, entry.decl_line,
+                       entry.decl_col, parameters->array[index].decl_line);
         return 1;
-    } 
+    }
 
     if (!insert_entry(table, entry)) {
         return 0;
@@ -319,7 +334,7 @@ int init_table(Table* table) {
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
     if (!table->array) {
-        add_error(ERROR, MEMORY_ERROR, NULL);
+        add_memory_error();
         table->max_len = 0;
         return 0;
     }
@@ -356,7 +371,7 @@ int init_function_collection(FunctionCollection* collection) {
     collection->funcs = (Function*)malloc(sizeof(Function)*DEFAULT_LENGTH);
 
     if (!collection->funcs) {
-        add_error(ERROR, MEMORY_ERROR, NULL);
+        add_memory_error();
         collection->max_len = 0;
         return 0;
     }
@@ -420,7 +435,11 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
         }
         if (!err) return 0;
     } else if (node->label == DeclFonct) {
-        if (!insert_function(collection, init_function(node->firstChild->firstChild))) {
+        Function fun;
+        if (!init_function(&fun, node->firstChild->firstChild, globals)) {
+            return 0;
+        }
+        if (!insert_function(collection, fun)) {
             return 0;
         }
     }
