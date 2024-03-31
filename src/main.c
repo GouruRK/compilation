@@ -11,10 +11,11 @@
  * @brief Display help message
  */
 void print_help(void) {
-    printf("Usage: ./tpcas [OPTION...] FILE\n"
+    printf("Usage: ./tpcc [OPTION...] FILE\n"
            "Check if syntax of given file is valid, according to the grammar defined in parser.y\n\n"
            "With no FILE, FILE is the standard input\n\n"
            "  -t, --tree\t\tprint abstract tree of the given file\n"
+           "  -s, --symbols\t\tprint associated symbol tables\n"
            "  -h, --help\t\tdisplay this help message and exit\n"
            );
 }

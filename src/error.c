@@ -46,7 +46,7 @@ void add_already_declared_error(char* symbol, int decl_line, int decl_col,
                         .has_line = true};
     snprintf(err.message,
              ERROR_LEN,
-             "symbol '%s' already declared line %d",
+             "symbol '%s' already declared at line %d",
              symbol, last_decl_line);
     add_default_error(err);
 }
