@@ -27,6 +27,7 @@ typedef struct {            // variable
 } Entry;
 
 typedef struct {            // symbol table
+    bool sorted;            // if entries has been sorted by name
     int cur_len;            // curent length of the table
     int max_len;            // maximum length of the table
     Entry* array;           // entry array
@@ -43,10 +44,16 @@ typedef struct {            // symbol table for functions
 } Function;
 
 typedef struct {            // array of symbol table for functions
+    bool sorted;            // if functions has been sorted by name
     int cur_len;            // current number of stored functions
     int max_len;            // maximum length 
     Function* funcs;        // functions array
 } FunctionCollection;
+
+int compare_entries(const void* entry1, const void* entry2);
+int compare_functions(const void* fun1, const void* fun2);
+int compare_ident_entry(const void* ident, const void* entry);
+int compare_ident_fun(const void* ident, const void* fun);
 
 /**
  * @brief Create a table structure that contains entries
@@ -67,6 +74,8 @@ int init_table(Table* table);
  */
 int is_in_table(Table* table, char ident[IDENT_LEN]);
 
+Entry* get_entry(Table* table, char ident[IDENT_LEN]);
+
 /**
  * @brief Create a collection of functions 
  * 
@@ -85,6 +94,8 @@ int init_function_collection(FunctionCollection* collection);
  *         else -1
  */
 int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]);
+
+Function* get_function(FunctionCollection* collection, char ident[IDENT_LEN]);
 
 /**
  * @brief Free allocated memory for table

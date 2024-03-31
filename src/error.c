@@ -18,7 +18,9 @@ static char* codes[] = {
     [MEMORY_ERROR] = "memory error",
     [ALREADY_DECLARE] = "symbol already declare",
     [MAIN_MISSING] = "missing starting function",
-    [CONFLICT_TYPES] = "conflict types with"
+    [CONFLICT_TYPES] = "conflict types with",
+    [WRONG_RTYPE] = "wrong return type",
+    [WRONG_PARAMETERS] = "wrong parameters",
 };
 
 static void add_default_error(Error err) {

@@ -8,6 +8,7 @@ Args init_args(void) {
     return (Args){.help = false,
                   .tree = false,
                   .err = false,
+                  .symbols = false,
                   .source = NULL};
 }
 
@@ -17,15 +18,19 @@ Args parse_args(int argc, char* argv[]) {
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"tree", no_argument, 0, 't'},
+        {"symbols", no_argument, 0, 's'},
         {0, 0, 0, 0}
     };
-    while ((opt = getopt_long(argc, argv, "ht", long_options, &opt_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hts", long_options, &opt_index)) != -1) {
         switch (opt) {
             case 't':
                 args.tree = true;
                 break;
             case 'h':
                 args.help = true;
+                break;
+            case 's':
+                args.symbols = true;
                 break;
             case '?':
                 fprintf(stderr, "Unknown option : %c\n", optopt);

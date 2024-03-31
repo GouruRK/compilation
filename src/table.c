@@ -129,6 +129,22 @@ static ValueType get_type(char ident[IDENT_LEN]);
  */
 static int decl_vars(Table* table, Node* node, Table* parameters);
 
+int compare_entries(const void* entry1, const void* entry2) {
+    return strcmp(((Entry*)entry1)->name, ((Entry*)entry2)->name);
+}
+
+int compare_functions(const void* fun1, const void* fun2) {
+    return strcmp(((Function*)fun1)->name, ((Function*)fun2)->name);
+}
+
+int compare_ident_entry(const void* ident, const void* entry) {
+    return strcmp((char*)ident, ((Entry*)entry)->name);
+}
+
+int compare_ident_fun(const void* ident, const void* fun) {
+    return strcmp((char*)ident, ((Function*)fun)->name);
+}
+
 static int compute_size(ValueType type, Node* node) {
     int size = 0;
     int additionnal = 1;
@@ -203,7 +219,9 @@ static void assing_rtype(Function* fun, Node* node) {
 }
 
 static int init_param_list(Table* table, Node* node) {
-    if (!node) return 1;
+    if (!node) {
+        return 1;
+    }
     
     ValueType type = get_type(node->val.ident);
     if (!insert_entry(table, init_entry(type, node->firstChild, -1))) {
@@ -296,6 +314,7 @@ static int decl_vars(Table* table, Node* node, Table* parameters) {
 int init_table(Table* table) {
     if (!table) return 0;
 
+    table->sorted = false;
     table->cur_len = 0;
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
@@ -317,6 +336,17 @@ int is_in_table(Table* table, char ident[IDENT_LEN]) {
         }
     }
     return -1;
+}
+
+Entry* get_entry(Table* table, char ident[IDENT_LEN]) {
+    if (!table || !table->cur_len) return NULL;
+
+    if (table->sorted) {
+        return bsearch(ident, table->array, table->cur_len, sizeof(Entry),
+        compare_ident_entry);
+    } 
+    int index = is_in_table(table, ident);
+    return index == -1 ? NULL: &(table->array[index]);
 }
 
 int init_function_collection(FunctionCollection* collection) {
@@ -343,6 +373,17 @@ int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]) {
         }
     }
     return -1;
+}
+
+Function* get_function(FunctionCollection* collection, char ident[IDENT_LEN]) {
+    if (!collection || !collection->cur_len) return NULL;
+
+    if (collection->sorted) {
+        return bsearch(ident, collection->funcs, collection->cur_len, sizeof(Function),
+        compare_ident_fun);
+    } 
+    int index = is_in_collection(collection, ident);
+    return index == -1 ? NULL: &(collection->funcs[index]);
 }
 
 void free_table(Table* table) {

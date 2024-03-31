@@ -25,7 +25,9 @@ typedef enum {                  // different code of errors
     MEMORY_ERROR,
     ALREADY_DECLARE,        
     MAIN_MISSING,
-    CONFLICT_TYPES
+    CONFLICT_TYPES,
+    WRONG_RTYPE,
+    WRONG_PARAMETERS
 } ErrorCode;
 
 typedef struct {                // error

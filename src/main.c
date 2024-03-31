@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "sematic.h"
 #include "tree.h"
 #include "args.h"
 #include "parser.h"
@@ -53,11 +54,12 @@ int main(int argc, char* argv[]) {
         err_functions = init_function_collection(&functions);
 
         if (err_functions && err_globals) {
-            if (create_tables(&globals, &functions, AST)) {
+            if (create_tables(&globals, &functions, AST) && args.symbols) {
                 puts("globals:");
                 print_table(globals);
                 print_collection(functions);
             }
+            check_sem(&globals, &functions, AST);
             if (has_errors()) {
                 print_errors();
             }
