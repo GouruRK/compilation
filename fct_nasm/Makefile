@@ -2,10 +2,10 @@ CC = gcc
 
 all: start_assembleur test
 
-test: %: %.o putchar.o getchar.o putint.o
+test: %: %.o putchar.o getchar.o
 	$(CC) -o $@ $^ -Wall
 
-start_assembleur: %: %.o putchar.o getchar.o putint.o getint.o
+start_assembleur: %: %.o putchar.o getchar.o
 	$(CC) -o $@ $^ -nostartfiles -no-pie
 
 utils.o:

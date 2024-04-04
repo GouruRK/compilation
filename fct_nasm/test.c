@@ -1,15 +1,11 @@
 #include <inttypes.h>
 #include <stdio.h>
-void my_putchar(int64_t);
-char* my_getchar();
-void my_putint(int64_t);
-int my_getint();
+void my_putchar(char);
+char my_getchar();
 
 int main(){
     my_putchar('p');
     my_putchar('\n');
-    printf("%s", my_getchar());
-    printf("\n");
-    my_putint(19);
+    my_putchar(my_getchar());
     my_putchar('\n');
 }
