@@ -61,9 +61,6 @@ int main(int argc, char* argv[]) {
                 print_collection(functions);
             }
             check_sem(&globals, &functions, AST);
-            if (has_errors()) {
-                print_errors();
-            }
         }
 
         free_collection(&functions);

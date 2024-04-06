@@ -39,13 +39,6 @@ typedef struct {                // error
     char message[ERROR_LEN];    // associate message
 } Error;
 
-typedef struct {                // error collection
-    bool fatal;                 // if at least one fatal error
-    int curlen;                 // current number of exceptions
-    char* file;                 // source file
-    Error errs[MAX_ERRORS];     // collection of errors
-} Errors;
-
 /**
  * @brief Initiate error collection
  * 
@@ -53,25 +46,19 @@ typedef struct {                // error collection
  */
 void init_error(char* source);
 
-void add_error(ErrorType type, ErrorCode code, char* message);
-void add_memory_error(void);
-void add_already_declared_error(char* symbol, int decl_line, int decl_col,
+void memory_error(void);
+void error(ErrorType type, ErrorCode code, char* message);
+void already_declared_error(char* symbol, int decl_line, int decl_col,
                                 int last_decl_line);
 
-void add_wrong_rtype_error(char* symbol, char* current_type,
+void wrong_rtype_error(char* symbol, char* current_type,
                            char* expected_type, int decl_line, int decl_col);
-
-/**
- * @brief Print errors contains in the error collection
- * 
- */
-void print_errors(void);
 
 /**
  * @brief Check if any errors has been registered
  * 
  * @return
  */
-bool has_errors(void);
+bool fatal_error(void);
 
 #endif

@@ -34,17 +34,17 @@ char* return_type[] = {
 static void check_main(FunctionCollection* collection) {
     Function* start_fun = get_function(collection, "main");
     if (!start_fun) {
-        add_error(ERROR, MAIN_MISSING, "no start function found");
+        error(ERROR, MAIN_MISSING, "no start function found");
         return;
     }
     if (start_fun->r_type != R_INT) {
-        add_wrong_rtype_error("main", return_type[start_fun->r_type],
+        wrong_rtype_error("main", return_type[start_fun->r_type],
                               return_type[R_INT], start_fun->decl_line,
                               start_fun->decl_col);
         return;
     }
     if (start_fun->parameters.cur_len) {
-        add_error(ERROR, WRONG_PARAMETERS, "main must take no parameters");
+        error(ERROR, WRONG_PARAMETERS, "main must take no parameters");
     }
 }
 

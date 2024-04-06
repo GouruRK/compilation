@@ -183,7 +183,7 @@ static int realloc_table(Table* table) {
 
     Entry* temp = realloc(table->array, sizeof(Entry)*next_len);
     if (!temp) {
-        add_memory_error();
+        memory_error();
         return 0;
     }
     table->array = temp;
@@ -195,7 +195,7 @@ static int insert_entry(Table* table, Entry entry) {
     if (!table) return 0;
     int index;
     if ((index = is_in_table(table, entry.name)) != -1) {
-        add_already_declared_error(entry.name, entry.decl_line,
+        already_declared_error(entry.name, entry.decl_line,
                        entry.decl_col, table->array[index].decl_col);
         return 1;
     }
@@ -241,7 +241,7 @@ static int init_function(Function* fun, Node* node, Table* globals) {
 
     int index;
     if ((index = is_in_table(globals, fun->name)) != -1) {  
-        add_already_declared_error(fun->name, fun->decl_line, fun->decl_col,
+        already_declared_error(fun->name, fun->decl_line, fun->decl_col,
                                    globals->array[index].decl_line);
     }
 
@@ -264,7 +264,7 @@ static int realloc_collection(FunctionCollection* collection) {
 
     Function* temp = (Function*)realloc(collection->funcs, sizeof(Function)*next_len);
     if (!temp) {
-        add_memory_error();
+        memory_error();
         return 0;
     }
     collection->funcs = temp;
@@ -276,7 +276,7 @@ static int insert_function(FunctionCollection* collection, Function fun) {
     if (!collection) return 0;
     int index;
     if ((index = is_in_collection(collection, fun.name)) != -1) {
-        add_already_declared_error(fun.name, fun.decl_line, fun.decl_col,
+        already_declared_error(fun.name, fun.decl_line, fun.decl_col,
                                    collection->funcs[index].decl_line);
         return 1; // return 1 to continue
     }
@@ -299,7 +299,7 @@ static int decl_var(Table* table, ValueType type, Node* node, Table* parameters)
     int index;
 
     if (parameters && (index = is_in_table(parameters, entry.name)) != -1) {
-        add_already_declared_error(entry.name, entry.decl_line,
+        already_declared_error(entry.name, entry.decl_line,
                        entry.decl_col, parameters->array[index].decl_line);
         return 1;
     }
@@ -334,7 +334,7 @@ int init_table(Table* table) {
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
     if (!table->array) {
-        add_memory_error();
+        memory_error();
         table->max_len = 0;
         return 0;
     }
@@ -371,7 +371,7 @@ int init_function_collection(FunctionCollection* collection) {
     collection->funcs = (Function*)malloc(sizeof(Function)*DEFAULT_LENGTH);
 
     if (!collection->funcs) {
-        add_memory_error();
+        memory_error();
         collection->max_len = 0;
         return 0;
     }
