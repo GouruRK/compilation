@@ -7,6 +7,8 @@
 #include "table.h"
 #include "error.h"
 
+#define SEMANTIC_ERROR 2
+
 /**
  * @brief Display help message
  */
@@ -67,5 +69,5 @@ int main(int argc, char* argv[]) {
         free_table(&globals);
     }
     deleteTree(AST);
-    return res;
+    return fatal_error() ? SEMANTIC_ERROR: res;
 }

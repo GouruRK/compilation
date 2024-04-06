@@ -18,7 +18,7 @@ Args parse_args(int argc, char* argv[]) {
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"tree", no_argument, 0, 't'},
-        {"symbols", no_argument, 0, 's'},
+        {"symtabs", no_argument, 0, 's'},
         {0, 0, 0, 0}
     };
     while ((opt = getopt_long(argc, argv, "hts", long_options, &opt_index)) != -1) {

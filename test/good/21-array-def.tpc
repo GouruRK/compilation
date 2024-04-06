@@ -1,11 +1,11 @@
 int b, a[50], c[2];
 
-char string[20], c;
+char string[20], d;
 
 int main(void) {
     int b, a[50], c[2];
 
-    char string[20], c;
+    char string[20], k;
 
     return 0;
 }

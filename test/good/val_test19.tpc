@@ -1,5 +1,0 @@
-void main(void){
-    int ty;
-    ty = 41;
-    res = ty == 41;
-}
