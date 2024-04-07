@@ -1,5 +1,0 @@
-void main(void){
-    int y;
-    y = -1220;
-    y = +1220;
-}

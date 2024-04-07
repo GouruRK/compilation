@@ -8,6 +8,8 @@ typedef struct {
     bool help;
     bool tree;
     bool err;
+    bool symbols;
+    char* name;
     FILE* source;
 } Args;
 

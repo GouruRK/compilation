@@ -6,6 +6,7 @@
 #include "tree.h"
 
 extern int lineno;       /* from lexer  */
+extern int colno;        /* from lexer  */
 
 static const char *StringFromLabel[] = {
     "if",
@@ -52,6 +53,7 @@ Node *makeNode(label_t label) {
     node->type = NONE;
     node->firstChild = node->nextSibling = NULL;
     node->lineno = lineno;
+    node->colno = colno;
     node->array = false;
     return node;
 }
@@ -66,6 +68,7 @@ Node *makeNodeWithValue(Value val, ValueType type) {
     node->val = val;
     node->firstChild = node->nextSibling = NULL;
     node->lineno = lineno;
+    node->colno = colno;
     node->array = false;
     return node;
 }

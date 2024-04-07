@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#define IDENT_LEN 64
+
 typedef enum {
     If,
     Else,
@@ -48,11 +50,12 @@ typedef enum {
 typedef union {
     int num;
     char c;
-    char ident[64];
+    char ident[IDENT_LEN];
 } Value;
 
 typedef struct Node {
     bool array;
+    int colno;
     int lineno;
     label_t label;
     ValueType type;

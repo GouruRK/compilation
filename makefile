@@ -4,25 +4,29 @@ PARSER=parser
 LEXER=lexer
 EXEC=tpcc
 
-bin/tpcas: obj/$(LEXER).o obj/$(PARSER).o obj/tree.o obj/args.o obj/main.o
+SRC_DIR=src
+BUILD_DIR=obj
+BIN_DIR=bin
+
+SOURCES=$(wildcard $(SRC_DIR)/*.c)
+SRC_OBJS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
+
+$(BIN_DIR)/$(EXEC): obj/$(LEXER).o obj/$(PARSER).o $(SRC_OBJS)
 	@mkdir bin --parent
 	$(CC) -o $@ $^
 
-obj/tree.o: src/tree.c src/tree.h
-obj/args.o: src/args.c src/args.h src/tree.h
+$(BUILD_DIR)/$(PARSER).o: obj/$(PARSER).c src/tree.h src/args.h
+$(BUILD_DIR)/$(LEXER).o: obj/$(LEXER).c obj/$(PARSER).h
 
-obj/$(PARSER).o: obj/$(PARSER).c src/tree.h src/args.h
-obj/$(LEXER).o: obj/$(LEXER).c obj/$(PARSER).h
-
-obj/%.o: src/%.c
+$(BUILD_DIR)/%.o: src/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-obj/$(LEXER).c: src/$(LEXER).lex obj/$(PARSER).h
+$(BUILD_DIR)/$(LEXER).c: src/$(LEXER).lex obj/$(PARSER).h
 	flex -o $@ $<
 
-obj/$(PARSER).c obj/$(PARSER).h: src/$(PARSER).y
+$(BUILD_DIR)/$(PARSER).c $(BUILD_DIR)/$(PARSER).h: $(SRC_DIR)/$(PARSER).y
 	@mkdir obj --parent
-	bison -d -o obj/$(PARSER).c $<
+	bison -d -o $(BUILD_DIR)/$(PARSER).c $<
 
 clean:
 	rm -f obj/*

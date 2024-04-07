@@ -1,0 +1,7 @@
+int add(int a, int b, int a) {
+    return a + b + c;
+}
+
+int main(void) {
+    return 0;
+}

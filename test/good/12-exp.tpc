@@ -1,0 +1,18 @@
+int main(void) {
+    int a, b, c;
+
+    b = a == 0;
+    b = a != 0;
+    b = a || a;
+    c = a == b;
+    c = a < b;
+    c = a > b;
+    c = a <= b;
+    c = a >= b;
+    c = a + b;
+    c = a - b;
+    c = a*b;
+    c = a/b;
+    c = a%b;
+    return 0;
+}

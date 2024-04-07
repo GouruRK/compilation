@@ -1,17 +1,23 @@
 #include <stdio.h>
 
+#include "sematic.h"
 #include "tree.h"
 #include "args.h"
 #include "parser.h"
+#include "table.h"
+#include "error.h"
+
+#define SEMANTIC_ERROR 2
 
 /**
  * @brief Display help message
  */
 void print_help(void) {
-    printf("Usage: ./tpcas [OPTION...] FILE\n"
+    printf("Usage: ./tpcc [OPTION...] FILE\n"
            "Check if syntax of given file is valid, according to the grammar defined in parser.y\n\n"
            "With no FILE, FILE is the standard input\n\n"
            "  -t, --tree\t\tprint abstract tree of the given file\n"
+           "  -s, --symbols\t\tprint associated symbol tables\n"
            "  -h, --help\t\tdisplay this help message and exit\n"
            );
 }
@@ -40,9 +46,28 @@ int main(int argc, char* argv[]) {
     Node* AST = NULL;
 
     int res = parse(args.source, &AST, args.tree);
-    
-    if (AST) {
-        deleteTree(AST);
+
+    if (res == 0) {
+        init_error(args.name);
+        int err_globals, err_functions;
+        Table globals;
+        FunctionCollection functions;
+        
+        err_globals = init_table(&globals);
+        err_functions = init_function_collection(&functions);
+
+        if (err_functions && err_globals) {
+            if (create_tables(&globals, &functions, AST) && args.symbols) {
+                puts("globals:");
+                print_table(globals);
+                print_collection(functions);
+            }
+            check_sem(&globals, &functions, AST);
+        }
+
+        free_collection(&functions);
+        free_table(&globals);
     }
-    return res;
+    deleteTree(AST);
+    return fatal_error() ? SEMANTIC_ERROR: res;
 }

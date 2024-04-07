@@ -1,0 +1,9 @@
+int fun(int a, int b, int c, int d) {}
+
+char fun2(char a, char b, char c, char d) {}
+
+void mix(char a, int b, char c, char d, int e) {}
+
+int main(void) {
+    return 0;
+}

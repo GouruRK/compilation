@@ -1,5 +1,0 @@
-int tab[5], tab2[5];
-
-int eriz(void) {
-    return 0;
-}
