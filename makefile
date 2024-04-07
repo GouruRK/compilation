@@ -1,9 +1,10 @@
 CC=gcc
-CFLAGS=-Wall -g -Iobj -Isrc
+CFLAGS=-Wall -g -Iinclude -Iobj -Isrc
 PARSER=parser
 LEXER=lexer
 EXEC=tpcc
 
+INCLUDE_DIR=include
 SRC_DIR=src
 BUILD_DIR=obj
 BIN_DIR=bin
@@ -15,7 +16,7 @@ $(BIN_DIR)/$(EXEC): obj/$(LEXER).o obj/$(PARSER).o $(SRC_OBJS)
 	@mkdir bin --parent
 	$(CC) -o $@ $^
 
-$(BUILD_DIR)/$(PARSER).o: obj/$(PARSER).c src/tree.h src/args.h
+$(BUILD_DIR)/$(PARSER).o: obj/$(PARSER).c $(INCLUDE_DIR)/tree.h $(INCLUDE_DIR)/args.h
 $(BUILD_DIR)/$(LEXER).o: obj/$(LEXER).c obj/$(PARSER).h
 
 $(BUILD_DIR)/%.o: src/%.c
@@ -33,3 +34,7 @@ clean:
 
 mrproper: clean
 	rm -f bin/*
+
+test: $(BIN_DIR)/$(EXEC)
+	@chmod u+x test
+	./runtests.sh
