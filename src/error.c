@@ -5,7 +5,6 @@
 #include <string.h>
 
 bool init = false;
-bool fatal = false;
 char filename[64];
 
 static char* types[] = {
@@ -41,7 +40,6 @@ void memory_error(void) {
                           .type = MEMORY_ERROR,
                           .has_line = false,
                           .message = "error while allocating memory"};
-    fatal = true;
     error_count[error.type]++;
     print_error(&error);
 }
@@ -58,9 +56,7 @@ void already_declared_error(char* symbol, int decl_line, int decl_col,
              "symbol '%s' already declared at line %d",
              symbol, last_decl_line);
     
-    fatal = true;
     error_count[err.type]++;
-
     print_error(&err);
 }
 
@@ -79,14 +75,52 @@ void wrong_rtype_error(char* symbol, char* current_type,
     print_error(&err);
 }
 
+void use_of_undeclare_symbol(char* symbol, int decl_line, int decl_col) {
+    Error err = (Error){.type = ERROR,
+                        .code = USE_OF_UNDECLARE_SYMBOL,
+                        .line = decl_line,
+                        .col = decl_col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "uses of undeclared symbol: '%s'", symbol);
+    error_count[err.type]++;
+    print_error(&err);
+}
+
+void unused_symbol(char* symbol, int decl_line, int decl_col) {
+    Error err = (Error){.type = NOTE,
+                        .code = UNUSED_SYMBOL,
+                        .line = decl_line,
+                        .col = decl_col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "unused symbol: '%s'", symbol);
+    error_count[err.type]++;
+    print_error(&err);
+}
+
+void unused_symbol_in_function(char* function, char* symbol, int decl_line, int decl_col) {
+    Error err = (Error){.type = NOTE,
+                        .code = UNUSED_SYMBOL,
+                        .line = decl_line,
+                        .col = decl_col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "unused symbol: '%s' in function '%s'", symbol, function);
+    error_count[err.type]++;
+    print_error(&err);
+}
+
 void error(ErrorType type, ErrorCode code, char* message) {
     Error err = (Error){.type = type, .code = code, .has_line = false};
     strcpy(err.message, message);
-    fatal = type == ERROR;
     error_count[err.type]++;
     print_error(&err);
 }
 
 bool fatal_error(void) {
-    return fatal;
+    return error_count[ERROR];
 }

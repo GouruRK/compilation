@@ -326,6 +326,39 @@ static int decl_vars(Table* table, Node* node, Table* parameters) {
     return decl_vars(table, node->nextSibling, parameters);
 }
 
+static Entry* find_entry(Table* globals, Function* fun, char ident[IDENT_LEN]) {
+    Entry* entry;
+    if ((entry = get_entry(&fun->parameters, ident))) return entry;
+    if ((entry = get_entry(&fun->locals, ident))) return entry;
+    if ((entry = get_entry(globals, ident))) return entry;
+    return NULL;
+}
+
+static void check_used(Table* globals, Function* fun, FunctionCollection* coll, Node* node) {
+    if (!node) return;
+
+    if (node->label == Ident) {
+        Entry* entry = find_entry(globals, fun, node->val.ident);
+        if (!entry) {
+            Function* f = get_function(coll, node->val.ident);
+            if (!f) {
+                use_of_undeclare_symbol(node->val.ident, node->lineno, node->colno);
+                return;
+            } else {
+                if (f->decl_line != node->lineno) {
+                    f->is_used = true;
+                }
+            }
+        } else {
+            if (entry->decl_line != node->lineno) {
+                entry->is_used = true;
+            }
+        }
+    }
+    check_used(globals, fun, coll, node->firstChild);
+    check_used(globals, fun, coll, node->nextSibling);
+}
+
 int init_table(Table* table) {
     if (!table) return 0;
 
@@ -434,14 +467,25 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
                             &(collection->funcs[collection->cur_len - 1].parameters));
         }
         if (!err) return 0;
+        return create_tables(globals, collection, node->nextSibling);
     } else if (node->label == DeclFonct) {
         Function fun;
         if (!init_function(&fun, node->firstChild->firstChild, globals)) {
             return 0;
         }
+
+        Node* head_decl_vars = node->firstChild->nextSibling->firstChild->firstChild;
+
+        if (!decl_vars(&fun.locals, head_decl_vars, &fun.parameters)) {
+            return 0;
+        }
+        
+        check_used(globals, &fun, collection, node->firstChild->nextSibling);
+        
         if (!insert_function(collection, fun)) {
             return 0;
         }
+        return create_tables(globals, collection, node->nextSibling);
     }
     if (!create_tables(globals, collection, node->firstChild)) {
         return 0;

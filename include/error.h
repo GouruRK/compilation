@@ -26,7 +26,9 @@ typedef enum {                  // different code of errors
     ALREADY_DECLARE,        
     MAIN_MISSING,
     WRONG_RTYPE,
-    WRONG_PARAMETERS
+    WRONG_PARAMETERS,
+    USE_OF_UNDECLARE_SYMBOL,
+    UNUSED_SYMBOL
 } ErrorCode;
 
 typedef struct {                // error
@@ -52,7 +54,10 @@ void already_declared_error(char* symbol, int decl_line, int decl_col,
                                 int last_decl_line);
 
 void wrong_rtype_error(char* symbol, char* current_type,
-                           char* expected_type, int decl_line, int decl_col);
+                       char* expected_type, int decl_line, int decl_col);
+void use_of_undeclare_symbol(char* symbol, int decl_line, int decl_col);
+void unused_symbol(char* symbol, int decl_line, int decl_col);
+void unused_symbol_in_function(char* function, char* symbol, int decl_line, int decl_col);
 
 /**
  * @brief Check if any errors has been registered

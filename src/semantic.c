@@ -48,8 +48,32 @@ static void check_main(FunctionCollection* collection) {
     }
 }
 
+static void search_unused_symbol_table(Table* table, char* source) {
+    for (int i = 0; i < table->cur_len; i++) {
+        Entry entry = table->array[i];
+        if (!entry.is_used) {
+            if (source) {
+                unused_symbol_in_function(source, entry.name, entry.decl_line,
+                                          entry.decl_col);    
+            } else {
+                unused_symbol(entry.name, entry.decl_line, entry.decl_col);
+            }
+        }
+    }
+}
+
+static void search_unused_symbols(Table* globals, FunctionCollection* collection) {
+    search_unused_symbol_table(globals, NULL);
+    for (int i = 0; i < collection->cur_len; i++) {
+        Function fun = collection->funcs[i];
+        search_unused_symbol_table(&fun.parameters, fun.name);
+        search_unused_symbol_table(&fun.locals, fun.name);
+    }
+}
+
 int check_sem(Table* globals, FunctionCollection* collection, Node* tree) {
     sort_tables(globals, collection);
     check_main(collection);
+    search_unused_symbols(globals, collection);
     return 0;
 }
