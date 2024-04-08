@@ -58,12 +58,13 @@ Node *makeNode(label_t label) {
     return node;
 }
 
-Node *makeNodeWithValue(Value val, ValueType type) {
+Node *makeNodeWithValue(Value val, ValueType type, label_t label) {
     Node *node = malloc(sizeof(Node));
     if (!node) {
         printf("Run out of memory\n");
         exit(2);
     }
+    node->label = label;
     node->type = type;
     node->val = val;
     node->firstChild = node->nextSibling = NULL;
@@ -121,7 +122,7 @@ static void printNode(Node* node) {
             printf("%c", node->val.c);
             break;
         case IDENTIFIER:
-            printf("%s", node->val.ident);
+            printf("%s (%s)", node->val.ident, StringFromLabel[node->label]);
             break;
         default:
             printf("%s", StringFromLabel[node->label]);

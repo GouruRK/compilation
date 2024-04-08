@@ -1,6 +1,6 @@
 CC = gcc
 
-all: start_assembleur test
+all: test
 
 test: %: %.o putchar.o getchar.o putint.o getint.o
 	$(CC) -o $@ $^ -Wall

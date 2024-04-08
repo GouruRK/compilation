@@ -7,29 +7,30 @@ getint:
 	push	rbp						; sauvegarde le pointeur de base
 	mov		rbp, rsp				; rbp = rsp
 
-	sub		rsp, 16					; reserve 16 bytes
+	sub		rsp, 8					; reserve 1 octets (8 bits)
+	mov 	qword [rsp], 0
 
-	xor		rax, rax				; rax = 0
-	xor		rdi, rdi				; rdi = 0
-	mov		rsi, rsp				; rsi = &stack
-	mov		rdx, 16					; rdx = 16
+	mov		rax, 0					; lecture
+	mov		rdi, 0					; stdin
+	mov		rsi, rsp				; adresse où stocker la lecture
+	mov		rdx, 8					; taille de la lecture
 	syscall
 
-	test	rax, rax
-	js		exit_failure			; read < 0
+	mov 	rdx, 0 
+	mov     rax, 0					; rax = 0
+	mov     rcx, 0					; rcx = 0
 
-parse_int:
-	xor     rax, rax				; rax = 0
-	xor     rcx, rcx				; rcx = 0
-	cmp		byte [rsp + rcx], '0'
-	jl		exit_failure			; stack[rcx] < '0'
-	cmp		byte [rsp + rcx], '9'
-	jg		exit_failure			; stack[rcx] > '9'
+
+; parse_int:
+; 	cmp		byte [rsp + rcx], '0'
+; 	jl		exit_failure			; stack[rcx] < '0'
+; 	cmp		byte [rsp + rcx], '9'
+; 	jg		exit_failure			; stack[rcx] > '9'
 
 loop:
 	movzx	rdx, byte [rsp + rcx]	; rdx = stack[rcx]
 	
-	test	rdx, rdx
+	cmp		rdx, 0
 	jz		final					; stack[rcx] == '\0'
 	cmp		rdx, '0'				; 
 	jl		final					; stack[rcx] < '0'

@@ -72,7 +72,7 @@ Node *makeNode(label_t label);
  * @param type 
  * @return Node* 
  */
-Node *makeNodeWithValue(Value val, ValueType type);
+Node *makeNodeWithValue(Value val, ValueType type, label_t label);
 void setAsArray(Node* node);
 void addSibling(Node *node, Node *sibling);
 void addChild(Node *parent, Node *child);
