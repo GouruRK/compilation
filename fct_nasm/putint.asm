@@ -1,9 +1,9 @@
-global my_putint
+global putint
 
 section .text
 
 ; rax = N, rcx = loop_counter, r8 = 1er char,
-my_putint:
+putint:
 	push	rbp					    
 	mov		rbp, rsp				; rbp = rsp
 	sub		rsp, 16					; réserve 16 bytes

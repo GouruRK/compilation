@@ -1,8 +1,9 @@
+global putchar
 section .text
-global my_putchar
+
 
 ; registre d'argument de fonction : rdi
-my_putchar:
+putchar:
     mov rbp, rdi ; déplacement de la valeur d'entrée dans rbp
 
     ; convention d'appel nasm 64

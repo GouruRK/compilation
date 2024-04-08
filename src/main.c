@@ -22,13 +22,20 @@ void print_help(void) {
            );
 }
 
-int parse(FILE* source, Node** AST, bool print_tree) {
-    int res = parse_file(source ? source: stdin, AST);
+int parse(Args* args, Node** AST, bool print_tree) {
+    int res;
+    if (!args->source) {
+        res = parse_file(stdin, AST);
+        args->name = "stdin";
+    } else {
+        res = parse_file(args->source, AST);
+    }
+    
     if (!res && print_tree) {
         printTree(*AST);
     }
-    if (source) {
-        fclose(source);
+    if (args->source) {
+        fclose(args->source);
     }
     return res;
 }
@@ -45,7 +52,7 @@ int main(int argc, char* argv[]) {
 
     Node* AST = NULL;
 
-    int res = parse(args.source, &AST, args.tree);
+    int res = parse(&args, &AST, args.tree);
 
     if (res == 0) {
         init_error(args.name);

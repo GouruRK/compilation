@@ -1,9 +1,9 @@
-global my_getint
+global getint
 
 section .text
 
 ; rax = res, rcx = loop_counter, rdx = temp_char
-my_getint:
+getint:
 	push	rbp						; sauvegarde le pointeur de base
 	mov		rbp, rsp				; rbp = rsp
 
@@ -21,7 +21,6 @@ my_getint:
 parse_int:
 	xor     rax, rax				; rax = 0
 	xor     rcx, rcx				; rcx = 0
-
 	cmp		byte [rsp + rcx], '0'
 	jl		exit_failure			; stack[rcx] < '0'
 	cmp		byte [rsp + rcx], '9'
