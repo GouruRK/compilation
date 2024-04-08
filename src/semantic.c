@@ -26,9 +26,9 @@ static void sort_tables(Table* globals, FunctionCollection* collection) {
 }
 
 char* return_type[] = {
-    [R_CHAR] = "char",
-    [R_INT] = "int",
-    [R_VOID] = "void"
+    [CHAR] = "char",
+    [INT] = "int",
+    [VOID] = "void"
 };
 
 static void check_main(FunctionCollection* collection) {
@@ -37,9 +37,9 @@ static void check_main(FunctionCollection* collection) {
         error(ERROR, MAIN_MISSING, "no start function found");
         return;
     }
-    if (start_fun->r_type != R_INT) {
+    if (start_fun->r_type != INT) {
         wrong_rtype_error("main", return_type[start_fun->r_type],
-                              return_type[R_INT], start_fun->decl_line,
+                              return_type[INT], start_fun->decl_line,
                               start_fun->decl_col);
         return;
     }

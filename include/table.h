@@ -7,8 +7,8 @@
 #define DEFAULT_LENGTH 10
 
 typedef enum { // type retours
-    R_INT, R_CHAR, R_VOID
-} RType;
+    INT, CHAR, VOID
+} Types;
 
 typedef enum { // size of types in byte
     S_INT = 4,
@@ -22,7 +22,7 @@ typedef struct {            // variable
     int decl_line;          // declaration line
     int decl_col;           // declaration column
     int size;               // size in bytes
-    ValueType type;         // type of variable
+    Types type;         // type of variable
     char name[IDENT_LEN];   // variable name
 } Entry;
 
@@ -37,7 +37,7 @@ typedef struct {            // symbol table for functions
     bool is_used;           // if the function is used
     int decl_line;          // declaration line
     int decl_col;           // declaration column
-    RType r_type;           // returned type
+    Types r_type;           // returned type
     char name[IDENT_LEN];   // function name
     Table parameters;       // parameters
     Table locals;           // locals

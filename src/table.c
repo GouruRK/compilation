@@ -15,7 +15,7 @@ int total_bytes = 0;
  * @param node declaration node
  * @return size in bytes
  */
-static int compute_size(ValueType type, Node* node);
+static int compute_size(Types type, Node* node);
 
 /**
  * @brief Create an entry strucutre that gives intels about a variable
@@ -24,7 +24,7 @@ static int compute_size(ValueType type, Node* node);
  * @param node node contains the variable name
  * @return created entry
  */
-static Entry init_entry(ValueType type, Node* node, int last_address);
+static Entry init_entry(Types type, Node* node, int last_address);
 
 /**
  * @brief Allocate more memory for a table
@@ -99,7 +99,7 @@ static int insert_function(FunctionCollection* collection, Function fun);
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_var(Table* table, ValueType type, Node* node, Table* parameters);
+static int decl_var(Table* table, Types type, Node* node, Table* parameters);
 
 /**
  * @brief Initialise a collection of variables of differents types
@@ -117,7 +117,7 @@ static int decl_vars(Table* table, Node* node, Table* parameters);
  * @param ident type identifiant
  * @return type
  */
-static ValueType get_type(char ident[IDENT_LEN]);
+static Types get_type(char ident[IDENT_LEN]);
 
 /**
  * @brief Initialise a collection of variables of differents types
@@ -145,10 +145,10 @@ int compare_ident_fun(const void* ident, const void* fun) {
     return strcmp((char*)ident, ((Function*)fun)->name);
 }
 
-static int compute_size(ValueType type, Node* node) {
+static int compute_size(Types type, Node* node) {
     int size = 0;
     int additionnal = 1;
-    if (type == NUMERIC) {
+    if (type == INT) {
         size = S_INT;
     } else if (type == CHAR) {
         size = S_CHAR;
@@ -159,7 +159,7 @@ static int compute_size(ValueType type, Node* node) {
     return size*additionnal;
 }
 
-static Entry init_entry(ValueType type, Node* node, int last_address) {
+static Entry init_entry(Types type, Node* node, int last_address) {
     Entry entry;
     entry.array = node->array;
     entry.decl_line = node->lineno;
@@ -211,11 +211,11 @@ static int insert_entry(Table* table, Entry entry) {
 
 static void assing_rtype(Function* fun, Node* node) {
     if (!strcmp(node->val.ident, "int")) {
-        fun->r_type = R_INT;
+        fun->r_type = INT;
     } else if (!strcmp(node->val.ident, "char")) {
-        fun->r_type = R_CHAR;
+        fun->r_type = CHAR;
     } else {
-        fun->r_type = R_VOID;
+        fun->r_type = VOID;
     }
 }
 
@@ -224,7 +224,7 @@ static int init_param_list(Table* table, Node* node) {
         return 1;
     }
     
-    ValueType type = get_type(node->val.ident);
+    Types type = get_type(node->val.ident);
     if (!insert_entry(table, init_entry(type, node->firstChild, -1))) {
         return 0;
     }
@@ -290,7 +290,7 @@ static int insert_function(FunctionCollection* collection, Function fun) {
     return 1;
 }
 
-static int decl_var(Table* table, ValueType type, Node* node, Table* parameters) {
+static int decl_var(Table* table, Types type, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
@@ -310,8 +310,8 @@ static int decl_var(Table* table, ValueType type, Node* node, Table* parameters)
     return decl_var(table, type, node->nextSibling, parameters);
 }
 
-static ValueType get_type(char ident[IDENT_LEN]) {
-    if (!strcmp("int", ident)) return NUMERIC;
+static Types get_type(char ident[IDENT_LEN]) {
+    if (!strcmp("int", ident)) return INT;
     return CHAR; 
 }
 
@@ -319,7 +319,7 @@ static int decl_vars(Table* table, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
-    ValueType type = get_type(node->val.ident);
+    Types type = get_type(node->val.ident);
     if (!decl_var(table, type, node->firstChild, parameters)) {
         return 0;
     }
@@ -453,14 +453,14 @@ void print_table(Table table) {
     for (int i = 0; i < table.cur_len; i++) {
         if (table.array[i].address >= 0) {
             printf("type: %4s | decl_line: %3d | size: %5d | address: %05xx | name: %s\n",
-                table.array[i].type == NUMERIC ? "int": "char",
+                table.array[i].type == INT ? "int": "char",
                 table.array[i].decl_line, 
                 table.array[i].size,
                 table.array[i].address,
                 table.array[i].name);
         } else {
             printf("type: %4s | decl_line: %3d | size: %5d | name: %s\n",
-                table.array[i].type == NUMERIC ? "int": "char",
+                table.array[i].type == INT ? "int": "char",
                 table.array[i].decl_line, 
                 table.array[i].size,
                 table.array[i].name);
@@ -471,15 +471,15 @@ void print_table(Table table) {
 
 void print_collection(FunctionCollection collection) {
     for (int i = 0; i < collection.cur_len; i++) {
-        RType type = collection.funcs[i].r_type;
+        Types type = collection.funcs[i].r_type;
         putchar('\n'); 
         printf("%s %s() - Parameters:\n",
-                type == R_INT ? "int" : (type == R_CHAR ? "char": "void"),
+                type == INT ? "int" : (type == CHAR ? "char": "void"),
                 collection.funcs[i].name);
         print_table(collection.funcs[i].parameters);
 
         printf("%s %s() - Locals:\n",
-                type == R_INT ? "int" : (type == R_CHAR ? "char": "void"),
+                type == INT ? "int" : (type == CHAR ? "char": "void"),
                 collection.funcs[i].name);
         print_table(collection.funcs[i].locals);
     }

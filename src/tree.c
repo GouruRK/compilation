@@ -50,7 +50,6 @@ Node *makeNode(label_t label) {
         exit(2);
     }
     node->label = label;
-    node->type = NONE;
     node->firstChild = node->nextSibling = NULL;
     node->lineno = lineno;
     node->colno = colno;
@@ -58,14 +57,13 @@ Node *makeNode(label_t label) {
     return node;
 }
 
-Node *makeNodeWithValue(Value val, ValueType type, label_t label) {
+Node *makeNodeWithValue(Value val, label_t label) {
     Node *node = malloc(sizeof(Node));
     if (!node) {
         printf("Run out of memory\n");
         exit(2);
     }
     node->label = label;
-    node->type = type;
     node->val = val;
     node->firstChild = node->nextSibling = NULL;
     node->lineno = lineno;
@@ -114,15 +112,16 @@ void deleteTree(Node *node) {
  * @param node 
  */
 static void printNode(Node* node) {
-    switch (node->type) {
-        case NUMERIC:
+    switch (node->label) {
+        case Num:
             printf("%d", node->val.num);
             break;
-        case CHAR:
+        case Character:
             printf("%c", node->val.c);
             break;
-        case IDENTIFIER:
-            printf("%s (%s)", node->val.ident, StringFromLabel[node->label]);
+        case Ident:
+        case Type:
+            printf("%s", node->val.ident);
             break;
         default:
             printf("%s", StringFromLabel[node->label]);

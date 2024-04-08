@@ -57,21 +57,21 @@ Prog:  DeclVars DeclFoncts                  { Node* prog = makeNode(Prog);
                                              }
     ;
 DeclVars:
-       DeclVars TYPE Declarateurs ';'       { Node* t = makeNodeWithValue(to_str($2), IDENTIFIER, Type);
+       DeclVars TYPE Declarateurs ';'       { Node* t = makeNodeWithValue(to_str($2), Type);
                                               addChild(t, $3);
                                               addChild($1, t); }
     |                                       { $$ = makeNode(DeclVars); }
     ;
 Declarateurs:
-       Declarateurs ',' IDENT               { addSibling($$, makeNodeWithValue(to_str($3), IDENTIFIER, Ident)); }  
-    |  Declarateurs ',' IDENT '[' NUM ']'   { Node* t = makeNodeWithValue(to_str($3), IDENTIFIER, Ident);
+       Declarateurs ',' IDENT               { addSibling($$, makeNodeWithValue(to_str($3), Ident)); }  
+    |  Declarateurs ',' IDENT '[' NUM ']'   { Node* t = makeNodeWithValue(to_str($3), Ident);
                                               setAsArray(t);
-                                              addChild(t, makeNodeWithValue(to_int($5), NUMERIC, Num));
+                                              addChild(t, makeNodeWithValue(to_int($5), Num));
                                               addSibling($$, t); }
-    |  IDENT '[' NUM ']'                    { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Ident);
+    |  IDENT '[' NUM ']'                    { $$ = makeNodeWithValue(to_str($1), Ident);
                                               setAsArray($$);
-                                              addChild($$, makeNodeWithValue(to_int($3), NUMERIC, Num)); }
-    |  IDENT                                { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Ident); }
+                                              addChild($$, makeNodeWithValue(to_int($3), Num)); }
+    |  IDENT                                { $$ = makeNodeWithValue(to_str($1), Ident); }
     ;
 DeclFoncts:
        DeclFoncts DeclFonct                 { $$ = $1;
@@ -88,35 +88,35 @@ DeclFonct:
                                               addSibling($$, $2); }
     ;
 EnTeteFonct:
-       TYPE IDENT '(' Parametres ')'        { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Type);
-                                              addSibling($$, makeNodeWithValue(to_str($2), IDENTIFIER, Ident));
+       TYPE IDENT '(' Parametres ')'        { $$ = makeNodeWithValue(to_str($1), Type);
+                                              addSibling($$, makeNodeWithValue(to_str($2), Ident));
                                               addSibling($$, $4); }
-|      VOID IDENT '(' Parametres ')'        { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Void);
-                                              addSibling($$, makeNodeWithValue(to_str($2), IDENTIFIER, Ident));
+|      VOID IDENT '(' Parametres ')'        { $$ = makeNodeWithValue(to_str($1), Void);
+                                              addSibling($$, makeNodeWithValue(to_str($2), Ident));
                                               addSibling($$, $4); }
     ;
 Parametres:
-       VOID                                 { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Void); }
+       VOID                                 { $$ = makeNodeWithValue(to_str($1), Void); }
     |  ListTypVar                           { $$ = makeNode(ListTypVar);
                                               addChild($$, $1); }
     ;
 ListTypVar:
        ListTypVar ',' TYPE IDENT            { $$ = $1;
-                                              Node* t = makeNodeWithValue(to_str($3), IDENTIFIER, Type);
-                                              addChild(t, makeNodeWithValue(to_str($4), IDENTIFIER, Ident));
+                                              Node* t = makeNodeWithValue(to_str($3), Type);
+                                              addChild(t, makeNodeWithValue(to_str($4), Ident));
                                               addSibling($$, t); }
     |  ListTypVar ',' TYPE IDENT '[' ']'    { $$ = $1;
-                                              Node* t = makeNodeWithValue(to_str($3), IDENTIFIER, Type);
-                                              Node* ident = makeNodeWithValue(to_str($4), IDENTIFIER, Ident);
+                                              Node* t = makeNodeWithValue(to_str($3), Type);
+                                              Node* ident = makeNodeWithValue(to_str($4), Ident);
                                               setAsArray(ident);
                                               addChild(t, ident);
                                               addSibling($$, t); }
-    |  TYPE IDENT '[' ']'                   { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Type);
-                                              Node* ident = makeNodeWithValue(to_str($2), IDENTIFIER, Ident);
+    |  TYPE IDENT '[' ']'                   { $$ = makeNodeWithValue(to_str($1), Type);
+                                              Node* ident = makeNodeWithValue(to_str($2), Ident);
                                               setAsArray(ident);
                                               addChild($$, ident); }
-    |  TYPE IDENT                           { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Type);
-                                              addChild($$, makeNodeWithValue(to_str($2), IDENTIFIER, Ident)); }
+    |  TYPE IDENT                           { $$ = makeNodeWithValue(to_str($1), Type);
+                                              addChild($$, makeNodeWithValue(to_str($2), Ident)); }
     ;
 
 Corps: '{' DeclVars SuiteInstr '}'          { $$ = makeNode(Corps);
@@ -129,7 +129,7 @@ SuiteInstr:
     |                                       { $$ = makeNode(SuiteInstr); }
     ;
 Instr:
-       LValue '=' Exp ';'                   { $$ = makeNodeWithValue(to_char('='), IDENTIFIER, Eq);
+       LValue '=' Exp ';'                   { $$ = makeNodeWithValue(to_char('='), Eq);
                                               addChild($$, $1);
                                               addSibling(FIRSTCHILD($$), $3); }
     |  IF '(' Exp ')' Instr                 { $$ = makeNode(If);
@@ -144,9 +144,9 @@ Instr:
     |  WHILE '(' Exp ')' Instr              { $$ = makeNode(While);
                                               addChild($$, $3);
                                               addChild($$, $5); }
-    |  IDENT '(' Arguments ')' ';'          { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Ident);
+    |  IDENT '(' Arguments ')' ';'          { $$ = makeNodeWithValue(to_str($1), Ident);
                                               addChild($$, $3); }
-    |  IDENT '[' Exp ']' ';'                { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Ident);
+    |  IDENT '[' Exp ']' ';'                { $$ = makeNodeWithValue(to_str($1), Ident);
                                               addChild($$, $3); }
     |  RETURN Exp ';'                       { $$ = makeNode(Return);
                                               addChild($$, $2); }
@@ -154,56 +154,56 @@ Instr:
     |  '{' SuiteInstr '}'                   { $$ = $2; }
     |  ';'                                  { ; }
     ;
-Exp :  Exp OR TB                            { Node* n = makeNodeWithValue(to_str($2), IDENTIFIER, Or);
+Exp :  Exp OR TB                            { Node* n = makeNodeWithValue(to_str($2), Or);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; }
     |  TB                                   { $$ = $1; }
     ;
-TB  :  TB AND FB                            { Node* n = makeNodeWithValue(to_str($2), IDENTIFIER, And);
+TB  :  TB AND FB                            { Node* n = makeNodeWithValue(to_str($2), And);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; }
     |  FB                                   { $$ = $1; }
     ;
-FB  :  FB EQ M                              { Node* n = makeNodeWithValue(to_str($2), IDENTIFIER, Eq);
+FB  :  FB EQ M                              { Node* n = makeNodeWithValue(to_str($2), Eq);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; }
     |  M                                    { $$ = $1; }
     ;
-M   :  M ORDER E                            { Node* n = makeNodeWithValue(to_str($2), IDENTIFIER, Order);
+M   :  M ORDER E                            { Node* n = makeNodeWithValue(to_str($2), Order);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; }
     |  E                                    { $$ = $1; }
     ;
-E   :  E ADDSUB T                           { Node* n = makeNodeWithValue(to_str($2), IDENTIFIER, AddSub);
+E   :  E ADDSUB T                           { Node* n = makeNodeWithValue(to_str($2), AddSub);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; }
     |  T                                    { $$ = $1; }
     ;    
-T   :  T DIVSTAR F                          { Node* n = makeNodeWithValue(to_str($2), IDENTIFIER, DivStar);
+T   :  T DIVSTAR F                          { Node* n = makeNodeWithValue(to_str($2), DivStar);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; } 
     |  F                                    { $$ = $1; }
     ;
-F   :  ADDSUB F                             { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, AddSub); 
+F   :  ADDSUB F                             { $$ = makeNodeWithValue(to_str($1), AddSub); 
                                               addChild($$, $2); }
-    |  '!' F                                { $$ = makeNodeWithValue(to_char('!'), IDENTIFIER, Negation); 
+    |  '!' F                                { $$ = makeNodeWithValue(to_char('!'), Negation); 
                                               addChild($$, $2); }
     |  '(' Exp ')'                          { $$ = $2; }
-    |  NUM                                  { $$ = makeNodeWithValue(to_int($1), NUMERIC, Num); }
-    |  CHARACTER                            { $$ = makeNodeWithValue(to_char($1), CHAR, Character); }
+    |  NUM                                  { $$ = makeNodeWithValue(to_int($1), Num); }
+    |  CHARACTER                            { $$ = makeNodeWithValue(to_char($1), Character); }
     |  LValue                               { $$ = $1; }
-    |  IDENT '(' Arguments  ')'             { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Ident);
+    |  IDENT '(' Arguments  ')'             { $$ = makeNodeWithValue(to_str($1), Ident);
                                               addChild($$, $3); }
     ;
 LValue:
-       IDENT                                { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Ident); }
-    |  IDENT '[' Exp ']'                    { $$ = makeNodeWithValue(to_str($1), IDENTIFIER, Ident); 
+       IDENT                                { $$ = makeNodeWithValue(to_str($1), Ident); }
+    |  IDENT '[' Exp ']'                    { $$ = makeNodeWithValue(to_str($1), Ident); 
                                               addChild($$, $3); }
     ;
 Arguments:

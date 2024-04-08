@@ -40,13 +40,6 @@ typedef enum {
     Assignation
 } label_t;
 
-typedef enum {
-    NUMERIC,
-    CHAR,
-    IDENTIFIER,
-    NONE
-} ValueType;
-
 typedef union {
     int num;
     char c;
@@ -58,7 +51,6 @@ typedef struct Node {
     int colno;
     int lineno;
     label_t label;
-    ValueType type;
     Value val;
     struct Node *firstChild, *nextSibling;
 } Node;
@@ -72,7 +64,7 @@ Node *makeNode(label_t label);
  * @param type 
  * @return Node* 
  */
-Node *makeNodeWithValue(Value val, ValueType type, label_t label);
+Node *makeNodeWithValue(Value val, label_t label);
 void setAsArray(Node* node);
 void addSibling(Node *node, Node *sibling);
 void addChild(Node *parent, Node *child);
