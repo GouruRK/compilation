@@ -4,7 +4,7 @@ section .text
 
 ; registre d'argument de fonction : rdi
 putchar:
-    ; convention d'appel nasm 64
+    ; convention d'appel AMD64
     push rbp
     mov rbp, rsp
     
@@ -15,8 +15,6 @@ putchar:
     mov rax, 1      ; choix de la fonction write
     mov rdi, 1      ; stdout
     syscall         ; appel à write
-
-    pop rdi
 
     mov rsp, rbp    ; restauration de la pile
     pop rbp

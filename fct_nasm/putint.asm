@@ -1,45 +1,38 @@
 global putint
-
+extern putchar
 section .text
 
-; rax = N, rcx = loop_counter, r8 = 1er char,
+; rax: int à afficher 
+; rbx: diviseur
+; rdx: reste de la division
 putint:
-	push	rbp					    
-	mov		rbp, rsp				; rbp = rsp
-	sub		rsp, 16					; réserve 16 bytes
+    ; convention d'appel AMD64
+    push    rbp
+    mov     rbp, rsp
 
-	mov 	QWORD [rsp], 0 			;
-	mov 	QWORD [rsp + 8], 0 		; on met à 0 la pile
+    mov     rax, rdi        ; sauvegarde de l'entier à afficher
+    mov     rbx, 10
 
-	movsx	rax, edi				; rax = DWORD(rdi)
-	mov		rcx, 15					; start compteur boucle
-	xor		r8, r8					; r8 = 0
-	mov		rbx, 10					; rbx = 10
-
-	test	rax, rax				;
-	jns		loop					; if rax >= 0
-
-negative:
-	mov		r8b, '-'				; r8 = '-'
-	neg		rax						; rax = -rax
+    cmp     rax, 0          ; si rax negatif
+    jg      loop            ; rax non negatif, on passe directemnt à la loop
+    
+    mov     rdi, '-'        ; on affiche le signe moins
+    call    putchar     
+    neg     rax             ; rax positif
 
 loop:
-	xor		rdx, rdx				; rx = 0
-	div		rbx						; rax = rax / 10, rdx = rax % 10
-	add		rdx, '0'				; rdx += '0'
-	mov		BYTE [rsp + rcx], dl	; pile[rcx] = dl
-	dec		rcx						; rcx--
-	test	rax, rax				; 
-	jnz		loop					; if rax < 0
+	cmp     rax, 0
+    je      exit
 
-write:
-	mov		BYTE [rsp + rcx], r8b	;
-	mov		rax, 1					; rax = 1
-	mov		rdi, 1					; rdi = 1
-	mov		rsi, rsp				; rsi = pointeur sur la pile
-	mov		rdx, 16					; rdx = 16
-	syscall
+    idiv	bx        	    ; rax = rax / bx, rdx = rax % bx
+	
+    add		rdx, '0'		; rdx += '0'
+    mov     rdi, rdx        ; on affiche rax % 10
+    call    putchar 
 
-	mov 	rsp, rbp				; restore pile
+	jmp		loop
+
+exit:
+	mov 	rsp, rbp		; restore pile
 	pop 	rbp
 	ret
