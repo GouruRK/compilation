@@ -40,6 +40,10 @@ typedef enum {
     Assignation
 } label_t;
 
+typedef enum {
+    T_INT, T_CHAR, T_VOID, T_BOOL
+} Types;
+
 typedef union {
     int num;
     char c;
@@ -51,6 +55,7 @@ typedef struct Node {
     int colno;
     int lineno;
     label_t label;
+    Types type;
     Value val;
     struct Node *firstChild, *nextSibling;
 } Node;

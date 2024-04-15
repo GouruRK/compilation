@@ -28,7 +28,8 @@ typedef enum {                  // different code of errors
     WRONG_RTYPE,
     WRONG_PARAMETERS,
     USE_OF_UNDECLARE_SYMBOL,
-    UNUSED_SYMBOL
+    UNUSED_SYMBOL,
+    ASSIGNATION_ERROR,
 } ErrorCode;
 
 typedef struct {                // error
@@ -58,6 +59,7 @@ void wrong_rtype_error(char* symbol, char* current_type,
 void use_of_undeclare_symbol(char* symbol, int decl_line, int decl_col);
 void unused_symbol(char* symbol, int decl_line, int decl_col);
 void unused_symbol_in_function(char* function, char* symbol, int decl_line, int decl_col);
+void assignation_error(char* symbol, char* dest_type, char* source_type, int decl_line, int decl_col);
 
 /**
  * @brief Check if any errors has been registered

@@ -114,6 +114,20 @@ void unused_symbol_in_function(char* function, char* symbol, int decl_line, int 
     print_error(&err);
 }
 
+void assignation_error(char* symbol, char* dest_type, char* source_type, int decl_line, int decl_col) {
+    Error err = (Error){.type = WARNING,
+                        .code = ASSIGNATION_ERROR,
+                        .line = decl_line,
+                        .col = decl_col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "trying to assign to '%s' of type '%s' a value of type '%s'",
+             symbol, dest_type, source_type);
+    error_count[err.type]++;
+    print_error(&err);     
+}
+
 void error(ErrorType type, ErrorCode code, char* message) {
     Error err = (Error){.type = type, .code = code, .has_line = false};
     strcpy(err.message, message);

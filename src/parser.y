@@ -129,7 +129,7 @@ SuiteInstr:
     |                                       { $$ = makeNode(SuiteInstr); }
     ;
 Instr:
-       LValue '=' Exp ';'                   { $$ = makeNodeWithValue(to_char('='), Eq);
+       LValue '=' Exp ';'                   { $$ = makeNodeWithValue(to_char('='), Assignation);
                                               addChild($$, $1);
                                               addSibling(FIRSTCHILD($$), $3); }
     |  IF '(' Exp ')' Instr                 { $$ = makeNode(If);

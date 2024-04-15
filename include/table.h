@@ -6,10 +6,6 @@
 
 #define DEFAULT_LENGTH 10
 
-typedef enum { // type retours
-    INT, CHAR, VOID
-} Types;
-
 typedef enum { // size of types in byte
     S_INT = 4,
     S_CHAR = 1
@@ -22,7 +18,7 @@ typedef struct {            // variable
     int decl_line;          // declaration line
     int decl_col;           // declaration column
     int size;               // size in bytes
-    Types type;         // type of variable
+    Types type;             // type of variable
     char name[IDENT_LEN];   // variable name
 } Entry;
 
@@ -94,6 +90,8 @@ int init_function_collection(FunctionCollection* collection);
  *         else -1
  */
 int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]);
+
+Entry* find_entry(Table* globals, Function* fun, char ident[IDENT_LEN]);
 
 Function* get_function(FunctionCollection* collection, char ident[IDENT_LEN]);
 

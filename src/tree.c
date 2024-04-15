@@ -69,6 +69,11 @@ Node *makeNodeWithValue(Value val, label_t label) {
     node->lineno = lineno;
     node->colno = colno;
     node->array = false;
+    if (label == Num) {
+        node->type = T_INT;
+    } else if (label == Character) {
+        node->type = T_CHAR;
+    }
     return node;
 }
 
@@ -114,14 +119,22 @@ void deleteTree(Node *node) {
 static void printNode(Node* node) {
     switch (node->label) {
         case Num:
-            printf("%d", node->val.num);
+            printf("%d (Num)", node->val.num);
             break;
         case Character:
-            printf("%c", node->val.c);
+            printf("'%c' (Character)", node->val.c);
             break;
         case Ident:
         case Type:
-            printf("%s", node->val.ident);
+        case Or:
+        case And:
+        case Eq:
+        case Order:
+        case DivStar:
+        case AddSub:
+        case Negation:
+        case Assignation:
+            printf("%s (%s)", node->val.ident, StringFromLabel[node->label]);
             break;
         default:
             printf("%s", StringFromLabel[node->label]);
@@ -129,9 +142,8 @@ static void printNode(Node* node) {
     }
     if (node->array) {
         puts("[]");
-    } else {
-        putchar('\n');
     }
+    putchar('\n');
 }
 
 void printTree(Node *node) {
