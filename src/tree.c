@@ -124,16 +124,9 @@ static void printNode(Node* node) {
         case Character:
             printf("'%c' (Character)", node->val.c);
             break;
-        case Ident:
-        case Type:
-        case Or:
-        case And:
-        case Eq:
-        case Order:
-        case DivStar:
-        case AddSub:
-        case Negation:
-        case Assignation:
+        case Ident: case Type: case Or: case And:
+        case Eq: case Order: case DivStar: case AddSub:
+        case Negation: case Assignation:
             printf("%s (%s)", node->val.ident, StringFromLabel[node->label]);
             break;
         default:
@@ -142,8 +135,9 @@ static void printNode(Node* node) {
     }
     if (node->array) {
         puts("[]");
+    } else {
+        putchar('\n');
     }
-    putchar('\n');
 }
 
 void printTree(Node *node) {

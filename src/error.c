@@ -60,9 +60,9 @@ void already_declared_error(char* symbol, int decl_line, int decl_col,
     print_error(&err);
 }
 
-void wrong_rtype_error(char* symbol, char* current_type,
-                           char* expected_type, int decl_line, int decl_col) {
-    Error err = (Error){.type = WARNING,
+void wrong_rtype_error(ErrorType type, char* symbol, char* current_type,
+                       char* expected_type, int decl_line, int decl_col) {
+    Error err = (Error){.type = type,
                         .code = WRONG_RTYPE,
                         .line = decl_line,
                         .col  = decl_col,

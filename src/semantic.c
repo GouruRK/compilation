@@ -52,9 +52,9 @@ static void check_main(FunctionCollection* collection) {
         return;
     }
     if (start_fun->r_type != T_INT) {
-        wrong_rtype_error("main", type_convert[start_fun->r_type],
-                              type_convert[T_INT], start_fun->decl_line,
-                              start_fun->decl_col);
+        wrong_rtype_error(WARNING, "main", type_convert[start_fun->r_type],
+                          type_convert[T_INT], start_fun->decl_line,
+                          start_fun->decl_col);
         return;
     }
     if (start_fun->parameters.cur_len) {
@@ -105,6 +105,29 @@ static void check_assignation_types(Table* globals, FunctionCollection* collecti
     }
 }
 
+static void check_return_type(Table* globals, FunctionCollection* collection,
+                                    Function* fun, Node* tree) {
+    Types child_type;
+    if (tree->firstChild) {
+        check_instruction(globals, collection, fun, tree->firstChild);
+        child_type = tree->firstChild->type;
+    } else {
+        child_type = T_VOID;
+    }
+    
+    if (fun->r_type != child_type) {
+        if (child_type == T_VOID) {
+            wrong_rtype_error(ERROR, fun->name, type_convert[child_type],
+                            type_convert[fun->r_type], tree->lineno,
+                            tree->colno);
+        } else if (fun->r_type == T_CHAR && child_type == T_INT) {
+            wrong_rtype_error(WARNING, fun->name, type_convert[child_type],
+                            type_convert[fun->r_type], tree->lineno,
+                            tree->colno);
+        }
+    }
+}
+
 static Types ident_type(Table* globals, FunctionCollection* collection,
                         Function* fun, Node* tree) {
     Entry* entry = find_entry(globals, fun, tree->val.ident);
@@ -122,7 +145,8 @@ static void check_instruction(Table* globals, FunctionCollection* collection,
         case Assignation: check_assignation_types(globals, collection, fun, tree); break;
         case Character: tree->type = T_CHAR; break;
         case Num: tree->type = T_INT; break;
-        case Ident: tree->type = ident_type(globals, collection, fun, tree);
+        case Ident: tree->type = ident_type(globals, collection, fun, tree); break;
+        case Return: check_return_type(globals, collection, fun, tree); return; // return here so we dont parse code after the return
         default: break;
     }
     check_instruction(globals, collection, fun, tree->nextSibling);
@@ -144,6 +168,10 @@ int check_sem(Table* globals, FunctionCollection* collection, Node* tree) {
     sort_tables(globals, collection);
     check_main(collection);
     search_unused_symbols(globals, collection);
+    if (fatal_error()) {
+        return 0;
+    }
+    // checking types requires to have all symbols known so no fatal errors
     check_types(globals, collection, tree);
     return 0;
 }

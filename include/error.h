@@ -54,7 +54,7 @@ void error(ErrorType type, ErrorCode code, char* message);
 void already_declared_error(char* symbol, int decl_line, int decl_col,
                                 int last_decl_line);
 
-void wrong_rtype_error(char* symbol, char* current_type,
+void wrong_rtype_error(ErrorType type, char* symbol, char* current_type,
                        char* expected_type, int decl_line, int decl_col);
 void use_of_undeclare_symbol(char* symbol, int decl_line, int decl_col);
 void unused_symbol(char* symbol, int decl_line, int decl_col);
