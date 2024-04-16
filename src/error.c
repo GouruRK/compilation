@@ -19,7 +19,7 @@ static int error_count[] = {
     [ERROR] = 0
 };
 
-void init_error(char* source) {
+void init_error(const char* source) {
     init = true;
     strcpy(filename, source);
 }
@@ -44,8 +44,8 @@ void memory_error(void) {
     print_error(&error);
 }
 
-void already_declared_error(char* symbol, int decl_line, int decl_col,
-                                int last_decl_line) {
+void already_declared_error(const char* symbol, int decl_line, int decl_col,
+                            int last_decl_line) {
     Error err = (Error){.type = ERROR,
                         .code = ALREADY_DECLARE,
                         .line = decl_line,
@@ -60,8 +60,8 @@ void already_declared_error(char* symbol, int decl_line, int decl_col,
     print_error(&err);
 }
 
-void wrong_rtype_error(ErrorType type, char* symbol, char* current_type,
-                       char* expected_type, int decl_line, int decl_col) {
+void wrong_rtype_error(ErrorType type, const char* symbol, const char* current_type,
+                       const char* expected_type, int decl_line, int decl_col) {
     Error err = (Error){.type = type,
                         .code = WRONG_RTYPE,
                         .line = decl_line,
@@ -75,7 +75,7 @@ void wrong_rtype_error(ErrorType type, char* symbol, char* current_type,
     print_error(&err);
 }
 
-void use_of_undeclare_symbol(char* symbol, int decl_line, int decl_col) {
+void use_of_undeclare_symbol(const char* symbol, int decl_line, int decl_col) {
     Error err = (Error){.type = ERROR,
                         .code = USE_OF_UNDECLARE_SYMBOL,
                         .line = decl_line,
@@ -88,7 +88,7 @@ void use_of_undeclare_symbol(char* symbol, int decl_line, int decl_col) {
     print_error(&err);
 }
 
-void unused_symbol(char* symbol, int decl_line, int decl_col) {
+void unused_symbol(const char* symbol, int decl_line, int decl_col) {
     Error err = (Error){.type = NOTE,
                         .code = UNUSED_SYMBOL,
                         .line = decl_line,
@@ -101,7 +101,8 @@ void unused_symbol(char* symbol, int decl_line, int decl_col) {
     print_error(&err);
 }
 
-void unused_symbol_in_function(char* function, char* symbol, int decl_line, int decl_col) {
+void unused_symbol_in_function(const char* function, const char* symbol,
+                               int decl_line, int decl_col) {
     Error err = (Error){.type = NOTE,
                         .code = UNUSED_SYMBOL,
                         .line = decl_line,
@@ -114,7 +115,8 @@ void unused_symbol_in_function(char* function, char* symbol, int decl_line, int 
     print_error(&err);
 }
 
-void assignation_error(char* symbol, char* dest_type, char* source_type, int decl_line, int decl_col) {
+void assignation_error(const char* symbol, const char* dest_type,
+                       const char* source_type, int decl_line, int decl_col) {
     Error err = (Error){.type = WARNING,
                         .code = ASSIGNATION_ERROR,
                         .line = decl_line,
@@ -128,7 +130,21 @@ void assignation_error(char* symbol, char* dest_type, char* source_type, int dec
     print_error(&err);     
 }
 
-void error(ErrorType type, ErrorCode code, char* message) {
+void redefinition_of_builtin_functions(const char* function, int decl_line,
+                                       int decl_col) {
+    Error err = (Error){.type = ERROR,
+                        .code = REDEFINITION_OF_BUILTIN,
+                        .line = decl_line,
+                        .col = decl_col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "trying to redefine builtin function '%s'", function);
+    error_count[err.type]++;
+    print_error(&err);     
+}
+
+void error(ErrorType type, ErrorCode code, const char* message) {
     Error err = (Error){.type = type, .code = code, .has_line = false};
     strcpy(err.message, message);
     error_count[err.type]++;

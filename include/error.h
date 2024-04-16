@@ -30,6 +30,7 @@ typedef enum {                  // different code of errors
     USE_OF_UNDECLARE_SYMBOL,
     UNUSED_SYMBOL,
     ASSIGNATION_ERROR,
+    REDEFINITION_OF_BUILTIN,
 } ErrorCode;
 
 typedef struct {                // error
@@ -47,19 +48,20 @@ typedef struct {                // error
  * 
  * @param source current parsed file
  */
-void init_error(char* source);
+void init_error(const char* source);
 
 void memory_error(void);
-void error(ErrorType type, ErrorCode code, char* message);
-void already_declared_error(char* symbol, int decl_line, int decl_col,
+void error(ErrorType type, ErrorCode code, const char* message);
+void already_declared_error(const char* symbol, int decl_line, int decl_col,
                                 int last_decl_line);
 
-void wrong_rtype_error(ErrorType type, char* symbol, char* current_type,
-                       char* expected_type, int decl_line, int decl_col);
-void use_of_undeclare_symbol(char* symbol, int decl_line, int decl_col);
-void unused_symbol(char* symbol, int decl_line, int decl_col);
-void unused_symbol_in_function(char* function, char* symbol, int decl_line, int decl_col);
-void assignation_error(char* symbol, char* dest_type, char* source_type, int decl_line, int decl_col);
+void wrong_rtype_error(ErrorType type, const char* symbol, const char* current_type,
+                       const char* expected_type, int decl_line, int decl_col);
+void use_of_undeclare_symbol(const char* symbol, int decl_line, int decl_col);
+void unused_symbol(const char* symbol, int decl_line, int decl_col);
+void unused_symbol_in_function(const char* function, const char* symbol, int decl_line, int decl_col);
+void assignation_error(const char* symbol, const char* dest_type, const char* source_type, int decl_line, int decl_col);
+void redefinition_of_builtin_functions(const char* function, int decl_line, int decl_col);
 
 /**
  * @brief Check if any errors has been registered

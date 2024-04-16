@@ -367,7 +367,7 @@ int init_table(Table* table) {
     return 1;
 }
 
-int is_in_table(Table* table, char ident[IDENT_LEN]) {
+int is_in_table(const Table* table, const char ident[IDENT_LEN]) {
     if (!table || !table->cur_len) return -1;
 
     for (int i = 0; i < table->cur_len; i++) {
@@ -378,7 +378,7 @@ int is_in_table(Table* table, char ident[IDENT_LEN]) {
     return -1;
 }
 
-Entry* find_entry(Table* globals, Function* fun, char ident[IDENT_LEN]) {
+Entry* find_entry(const Table* globals, const Function* fun, const char ident[IDENT_LEN]) {
     Entry* entry;
     if ((entry = get_entry(&fun->parameters, ident))) return entry;
     if ((entry = get_entry(&fun->locals, ident))) return entry;
@@ -386,7 +386,7 @@ Entry* find_entry(Table* globals, Function* fun, char ident[IDENT_LEN]) {
     return NULL;
 }
 
-Entry* get_entry(Table* table, char ident[IDENT_LEN]) {
+Entry* get_entry(const Table* table, const char ident[IDENT_LEN]) {
     if (!table || !table->cur_len) return NULL;
 
     if (table->sorted) {
@@ -412,7 +412,7 @@ int init_function_collection(FunctionCollection* collection) {
     return 1;
 }
 
-int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]) {
+int is_in_collection(const FunctionCollection* collection, const char ident[IDENT_LEN]) {
     if (!collection || !collection->cur_len) return -1;
 
     for (int i = 0; i < collection->cur_len; i++) {
@@ -423,7 +423,7 @@ int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]) {
     return -1;
 }
 
-Function* get_function(FunctionCollection* collection, char ident[IDENT_LEN]) {
+Function* get_function(const FunctionCollection* collection, const char ident[IDENT_LEN]) {
     if (!collection || !collection->cur_len) return NULL;
 
     if (collection->sorted) {

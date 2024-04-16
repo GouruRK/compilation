@@ -1,0 +1,19 @@
+char getchar(void) {
+    return 'a';
+}
+
+void putchar(char a) {
+    return;
+}
+
+int getint(void) {
+    return 0;
+}
+
+void putint(int n) {
+    return;
+}
+
+int main(void) {
+    return 0;
+}

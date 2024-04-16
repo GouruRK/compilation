@@ -6,23 +6,27 @@
 #include "table.h"
 #include "error.h"
 
-char* type_convert[] = {
+static const char* type_convert[] = {
     [T_CHAR] = "char",
     [T_INT] = "int",
     [T_VOID] = "void"
 };
 
+static const char* builtin_fcts[] = {
+    "getchar", "putchar", "getint", "putint"
+};
+
 static void sort_table(Table* table);
 static void sort_collection(FunctionCollection* collection);
 static void sort_tables(Table* globals, FunctionCollection* collection);
-static void check_main(FunctionCollection* collection);
-static void search_unused_symbol_table(Table* table, char* source);
-static void search_unused_symbols(Table* globals, FunctionCollection* collection);
-static void check_assignation_types(Table* globals, FunctionCollection* collection,
-                                    Function* fun, Node* tree);
-static void check_instruction(Table* globals, FunctionCollection* collection,
-                              Function* fun, Node* tree);
-static void check_types(Table* globals, FunctionCollection* collection, Node* tree);
+static void check_main(const FunctionCollection* collection);
+static void search_unused_symbol_table(const Table* table, const char* source);
+static void search_unused_symbols(const Table* globals, const FunctionCollection* collection);
+static void check_assignation_types(const Table* globals, const FunctionCollection* collection,
+                                    const Function* fun, Node* tree);
+static void check_instruction(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree);
+static void check_types(const Table* globals, const FunctionCollection* collection, Node* tree);
 
 
 static void sort_table(Table* table) {
@@ -45,7 +49,7 @@ static void sort_tables(Table* globals, FunctionCollection* collection) {
 }
 
 
-static void check_main(FunctionCollection* collection) {
+static void check_main(const FunctionCollection* collection) {
     Function* start_fun = get_function(collection, "main");
     if (!start_fun) {
         error(ERROR, MAIN_MISSING, "no start function found");
@@ -62,7 +66,7 @@ static void check_main(FunctionCollection* collection) {
     }
 }
 
-static void search_unused_symbol_table(Table* table, char* source) {
+static void search_unused_symbol_table(const Table* table, const char* source) {
     for (int i = 0; i < table->cur_len; i++) {
         Entry entry = table->array[i];
         if (!entry.is_used) {
@@ -76,7 +80,9 @@ static void search_unused_symbol_table(Table* table, char* source) {
     }
 }
 
-static void search_unused_symbols(Table* globals, FunctionCollection* collection) {
+static void search_unused_symbols(const Table* globals, const FunctionCollection* collection) {
+    // TODO: if symbol is one of the builtin functions, continue
+    // (because we prevent redefinition of builtin functions...)
     search_unused_symbol_table(globals, NULL);
     for (int i = 0; i < collection->cur_len; i++) {
         Function fun = collection->funcs[i];
@@ -85,9 +91,10 @@ static void search_unused_symbols(Table* globals, FunctionCollection* collection
     }
 }
 
-static void check_assignation_types(Table* globals, FunctionCollection* collection,
-                                    Function* fun, Node* tree) {
-    // TODO: Assignation sur tableaux
+static void check_assignation_types(const Table* globals, const FunctionCollection* collection,
+                                    const Function* fun, Node* tree) {
+    // TODO: Assignation on arrays
+    // TODO: check when value is '+55' or '-1'
     check_instruction(globals, collection, fun, tree->firstChild);
     check_instruction(globals, collection, fun, SECONDCHILD(tree));
     Types t_dest = tree->firstChild->type;
@@ -105,8 +112,18 @@ static void check_assignation_types(Table* globals, FunctionCollection* collecti
     }
 }
 
-static void check_return_type(Table* globals, FunctionCollection* collection,
-                                    Function* fun, Node* tree) {
+static void redefinition_of_builtin(const FunctionCollection* collection) {
+    Function* fun;
+    for (int i = 0; i < 4; i++) {
+        if ((fun = get_function(collection, builtin_fcts[i]))) {
+            redefinition_of_builtin_functions(fun->name, fun->decl_line,
+                                              fun->decl_col);
+        }
+    }
+}
+
+static void check_return_type(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree) {
     Types child_type;
     if (tree->firstChild) {
         check_instruction(globals, collection, fun, tree->firstChild);
@@ -114,7 +131,7 @@ static void check_return_type(Table* globals, FunctionCollection* collection,
     } else {
         child_type = T_VOID;
     }
-    
+
     if (fun->r_type != child_type) {
         if (child_type == T_VOID) {
             wrong_rtype_error(ERROR, fun->name, type_convert[child_type],
@@ -128,8 +145,8 @@ static void check_return_type(Table* globals, FunctionCollection* collection,
     }
 }
 
-static Types ident_type(Table* globals, FunctionCollection* collection,
-                        Function* fun, Node* tree) {
+static Types ident_type(const Table* globals, const FunctionCollection* collection,
+                        const Function* fun, Node* tree) {
     Entry* entry = find_entry(globals, fun, tree->val.ident);
     if (entry) {
         return entry->type;
@@ -138,8 +155,8 @@ static Types ident_type(Table* globals, FunctionCollection* collection,
 }
 
 // tree is the first instruction of the function
-static void check_instruction(Table* globals, FunctionCollection* collection,
-                              Function* fun, Node* tree) {
+static void check_instruction(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree) {
     if (!tree) return;
     switch (tree->label) {
         case Assignation: check_assignation_types(globals, collection, fun, tree); break;
@@ -152,7 +169,7 @@ static void check_instruction(Table* globals, FunctionCollection* collection,
     check_instruction(globals, collection, fun, tree->nextSibling);
 }
 
-static void check_types(Table* globals, FunctionCollection* collection, Node* tree) {
+static void check_types(const Table* globals, const FunctionCollection* collection, Node* tree) {
     Node* decl_fonct_node = FIRSTCHILD(SECONDCHILD(tree));
     Function* fun;
 
@@ -167,6 +184,7 @@ static void check_types(Table* globals, FunctionCollection* collection, Node* tr
 int check_sem(Table* globals, FunctionCollection* collection, Node* tree) {
     sort_tables(globals, collection);
     check_main(collection);
+    redefinition_of_builtin(collection);
     search_unused_symbols(globals, collection);
     if (fatal_error()) {
         return 0;
