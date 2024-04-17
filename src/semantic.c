@@ -12,22 +12,109 @@ static const char* type_convert[] = {
     [T_VOID] = "void"
 };
 
-static const char* builtin_fcts[] = {
-    "getchar", "putchar", "getint", "putint"
-};
-
+/**
+ * @brief Sort a table of entries using the lexicographic order
+ * 
+ * @param table 
+ */
 static void sort_table(Table* table);
+
+/**
+ * @brief Sort both local and parameter tables using the lexicographic order
+ * 
+ * @param collection 
+ */
 static void sort_collection(FunctionCollection* collection);
+
+/**
+ * @brief Sort tables of globals and functions
+ * 
+ * @param globals 
+ * @param collection 
+ */
 static void sort_tables(Table* globals, FunctionCollection* collection);
+
+/**
+ * @brief Check if the main function is correct, according to its parameters
+ *        and its return type
+ * 
+ * @param collection collection of function
+ */
 static void check_main(const FunctionCollection* collection);
+
+/**
+ * @brief Search for declared but non-used symbols in a sigle table
+ * 
+ * @param table table to search the symbol
+ * @param source symbol's identifier
+ */
 static void search_unused_symbol_table(const Table* table, const char* source);
-static void search_unused_symbols(const Table* globals, const FunctionCollection* collection);
-static void check_assignation_types(const Table* globals, const FunctionCollection* collection,
+
+/**
+ * @brief Search for declared but non-used symbols in the global's tables and
+ *        for functions
+ * 
+ * @param globals global's table 
+ * @param collection collection of functions
+ */
+static void search_unused_symbols(const Table* globals,
+                                  const FunctionCollection* collection);
+
+/**
+ * @brief Check if types are valid when assigning a value to a LValue
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the assignation is done
+ * @param tree head node of the assignation (with the 'Assignation' label)
+ */
+static void check_assignation_types(const Table* globals,
+                                    const FunctionCollection* collection,
                                     const Function* fun, Node* tree);
+
+/**
+ * @brief Check if the return type is the correct, according to function
+ *        declaration
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current functin where the return is done
+ * @param tree head node of the return (with the 'Return' label)
+ */
+static void check_return_type(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree);
+
+/**
+ * @brief Get the type of an identifier. For functions, it is their return type
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function 
+ * @param ident identifier to look for
+ * @return
+ */
+static Types ident_type(const Table* globals, const FunctionCollection* collection,
+                        const Function* fun, const char* ident);
+
+/**
+ * @brief Check if instructions are correcly typed
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function
+ * @param tree head node of the instruction
+ */
 static void check_instruction(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree);
-static void check_types(const Table* globals, const FunctionCollection* collection, Node* tree);
 
+/**
+ * @brief Main function for checking types
+ * 
+ * @param globals global's tables
+ * @param collection collection of functions
+ * @param tree head node of the programm (the 'Prog' label)
+ */
+static void check_types(const Table* globals, const FunctionCollection* collection, Node* tree);
 
 static void sort_table(Table* table) {
     qsort(table->array, table->cur_len, sizeof(Entry), compare_entries);
@@ -112,16 +199,6 @@ static void check_assignation_types(const Table* globals, const FunctionCollecti
     }
 }
 
-static void redefinition_of_builtin(const FunctionCollection* collection) {
-    Function* fun;
-    for (int i = 0; i < 4; i++) {
-        if ((fun = get_function(collection, builtin_fcts[i]))) {
-            redefinition_of_builtin_functions(fun->name, fun->decl_line,
-                                              fun->decl_col);
-        }
-    }
-}
-
 static void check_return_type(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
     Types child_type;
@@ -146,12 +223,12 @@ static void check_return_type(const Table* globals, const FunctionCollection* co
 }
 
 static Types ident_type(const Table* globals, const FunctionCollection* collection,
-                        const Function* fun, Node* tree) {
-    Entry* entry = find_entry(globals, fun, tree->val.ident);
+                        const Function* fun, const char* ident) {
+    Entry* entry = find_entry(globals, fun, ident);
     if (entry) {
         return entry->type;
     }
-    return get_function(collection, tree->val.ident)->r_type;
+    return get_function(collection, ident)->r_type;
 }
 
 // tree is the first instruction of the function
@@ -162,7 +239,7 @@ static void check_instruction(const Table* globals, const FunctionCollection* co
         case Assignation: check_assignation_types(globals, collection, fun, tree); break;
         case Character: tree->type = T_CHAR; break;
         case Num: tree->type = T_INT; break;
-        case Ident: tree->type = ident_type(globals, collection, fun, tree); break;
+        case Ident: tree->type = ident_type(globals, collection, fun, tree->val.ident); break;
         case Return: check_return_type(globals, collection, fun, tree); return; // return here so we dont parse code after the return
         default: break;
     }
@@ -184,7 +261,6 @@ static void check_types(const Table* globals, const FunctionCollection* collecti
 int check_sem(Table* globals, FunctionCollection* collection, Node* tree) {
     sort_tables(globals, collection);
     check_main(collection);
-    redefinition_of_builtin(collection);
     search_unused_symbols(globals, collection);
     if (fatal_error()) {
         return 0;
