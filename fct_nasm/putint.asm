@@ -11,28 +11,26 @@ putint:
     mov     rbp, rsp
 
     mov     rax, rdi        ; sauvegarde de l'entier à afficher
-    mov     rbx, 10
-
-    cmp     rax, 0          ; si rax negatif
-    jg      loop            ; rax non negatif, on passe directemnt à la loop
-    
-    mov     rdi, '-'        ; on affiche le signe moins
-    call    putchar     
-    neg     rax             ; rax positif
+    mov     rbx, 10         ; diviseur
 
 loop:
-	cmp     rax, 0
+    cmp     rax, 0
     je      exit
 
-    idiv	bx        	    ; rax = rax / bx, rdx = rax % bx
-	
-    add		rdx, '0'		; rdx += '0'
+    mov     rdx, 0          ; initialise le reste
+
+    idiv    rbx             ; rax = rax // rbx, rdx = rax % rbx
+    
+    push    rax
+
+    add     rdx, '0'        ; rdx += '0'
     mov     rdi, rdx        ; on affiche rax % 10
     call    putchar 
 
-	jmp		loop
+    pop     rax
+    jmp     loop
 
 exit:
-	mov 	rsp, rbp		; restore pile
-	pop 	rbp
-	ret
+    mov     rsp, rbp        ; restore pile
+    pop     rbp
+    ret

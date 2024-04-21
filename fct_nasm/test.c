@@ -4,11 +4,11 @@ int getint();
 void putint(int);
 
 int main(){
-    char a = getchar();
+    // char a = getchar();
     int b = getint();
-    putchar(a);
-    putchar('\n');
-    putchar(b);
+    // putchar(a);
+    // putchar('\n');
+    putint(b);
     putchar('\n');
     // putchar(a);
     // putint(b);
