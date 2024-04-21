@@ -1,4 +1,4 @@
-#include "error.h"
+#include "errors.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -33,121 +33,118 @@ static void print_error(Error *error) {
         fprintf(stderr, "%s: %s: %s\n",
                 init ? filename: "", types[error->type], error->message);
     }
+    error_count[error->type]++;
 }
 
 void memory_error(void) {
     Error error = (Error){.type = ERROR,
-                          .type = MEMORY_ERROR,
                           .has_line = false,
                           .message = "error while allocating memory"};
-    error_count[error.type]++;
     print_error(&error);
 }
 
-void already_declared_error(const char* symbol, int decl_line, int decl_col,
-                            int last_decl_line) {
+void already_declared_error(const char* symbol, int line, int col,
+                            int last_line) {
     Error err = (Error){.type = ERROR,
-                        .code = ALREADY_DECLARE,
-                        .line = decl_line,
-                        .col  = decl_col,
+                        .line = line,
+                        .col  = col,
                         .has_line = true};
     snprintf(err.message,
              ERROR_LEN,
              "symbol '%s' already declared at line %d",
-             symbol, last_decl_line);
+             symbol, last_line);
     
-    error_count[err.type]++;
     print_error(&err);
 }
 
 void wrong_rtype_error(ErrorType type, const char* symbol, const char* current_type,
-                       const char* expected_type, int decl_line, int decl_col) {
+                       const char* expected_type, int line, int col) {
     Error err = (Error){.type = type,
-                        .code = WRONG_RTYPE,
-                        .line = decl_line,
-                        .col  = decl_col,
+                        .line = line,
+                        .col  = col,
                         .has_line = true};
     snprintf(err.message, ERROR_LEN,
              "'%s' return type must be '%s' instead of '%s'",
              symbol, expected_type, current_type);
     
-    error_count[err.type]++;
     print_error(&err);
 }
 
-void use_of_undeclare_symbol(const char* symbol, int decl_line, int decl_col) {
+void use_of_undeclare_symbol(const char* symbol, int line, int col) {
     Error err = (Error){.type = ERROR,
-                        .code = USE_OF_UNDECLARE_SYMBOL,
-                        .line = decl_line,
-                        .col = decl_col,
+                        .line = line,
+                        .col = col,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
              "uses of undeclared symbol: '%s'", symbol);
-    error_count[err.type]++;
     print_error(&err);
 }
 
-void unused_symbol(const char* symbol, int decl_line, int decl_col) {
+void unused_symbol(const char* symbol, int line, int col) {
     Error err = (Error){.type = NOTE,
-                        .code = UNUSED_SYMBOL,
-                        .line = decl_line,
-                        .col = decl_col,
+                        .line = line,
+                        .col = col,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
              "unused symbol: '%s'", symbol);
-    error_count[err.type]++;
     print_error(&err);
 }
 
 void unused_symbol_in_function(const char* function, const char* symbol,
-                               int decl_line, int decl_col) {
+                               int line, int col) {
     Error err = (Error){.type = NOTE,
-                        .code = UNUSED_SYMBOL,
-                        .line = decl_line,
-                        .col = decl_col,
+                        .line = line,
+                        .col = col,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
              "unused symbol: '%s' in function '%s'", symbol, function);
-    error_count[err.type]++;
     print_error(&err);
 }
 
-void assignation_error(const char* symbol, const char* dest_type,
-                       const char* source_type, int decl_line, int decl_col) {
-    Error err = (Error){.type = WARNING,
-                        .code = ASSIGNATION_ERROR,
-                        .line = decl_line,
-                        .col = decl_col,
+void assignation_error(ErrorType type, const char* symbol, const char* dest_type,
+                       const char* source_type, int line, int col) {
+    Error err = (Error){.type = type,
+                        .line = line,
+                        .col = col,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
              "trying to assign to '%s' of type '%s' a value of type '%s'",
              symbol, dest_type, source_type);
-    error_count[err.type]++;
     print_error(&err);     
 }
 
-void redefinition_of_builtin_functions(const char* function, int decl_line,
-                                       int decl_col) {
+void redefinition_of_builtin_functions(const char* function, int line,
+                                       int col) {
     Error err = (Error){.type = ERROR,
-                        .code = REDEFINITION_OF_BUILTIN,
-                        .line = decl_line,
-                        .col = decl_col,
+                        .line = line,
+                        .col = col,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
              "trying to redefine builtin function '%s'", function);
-    error_count[err.type]++;
-    print_error(&err);     
+    print_error(&err);
 }
 
-void error(ErrorType type, ErrorCode code, const char* message) {
-    Error err = (Error){.type = type, .code = code, .has_line = false};
+void incorrect_array_access(const char* name, const char* access_type, int line,
+                            int col) {
+    Error err = (Error){.type = ERROR,
+                        .line = line,
+                        .col = col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "trying to access array '%s' with an expression of type '%s'",
+             name, access_type);
+    print_error(&err);
+}
+
+void error(ErrorType type, const char* message) {
+    Error err = (Error){.type = type, .has_line = false};
     strcpy(err.message, message);
-    error_count[err.type]++;
     print_error(&err);
 }
 

@@ -8,11 +8,9 @@ int main(void) {
 
     a = 'a';
     b = 5463;
-    c = add();
 
     d = 'a';
     e = 5463;
-    f = add();
 
     return 0;
 }

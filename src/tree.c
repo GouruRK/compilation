@@ -32,6 +32,7 @@ static const char *StringFromLabel[] = {
     "decl_fonct",
     "en_tete_fonct",
     "parametres",
+    "NoParametres",
     "list_typ_var",
     "corps",
     "suiteInstr",

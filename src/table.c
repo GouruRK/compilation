@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "error.h"
+#include "errors.h"
 
 int total_bytes = 0;
 

@@ -209,7 +209,7 @@ LValue:
 Arguments:
        ListExp                              { $$ = makeNode(ListExp); 
                                               addChild($$, $1); }
-    |                                       { ; }
+    |                                       { $$ = makeNode(NoParametres); }
     ;
 ListExp:
        ListExp ',' Exp                      { $$ = $1;

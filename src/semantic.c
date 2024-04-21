@@ -4,12 +4,14 @@
 #include <stdlib.h>
 
 #include "table.h"
-#include "error.h"
+#include "errors.h"
 
 static const char* type_convert[] = {
     [T_CHAR] = "char",
     [T_INT] = "int",
-    [T_VOID] = "void"
+    [T_VOID] = "void",
+    [T_ARRAY] = "array",
+    [T_FUNCTION] = "function"
 };
 
 /**
@@ -93,8 +95,8 @@ static void check_return_type(const Table* globals, const FunctionCollection* co
  * @param ident identifier to look for
  * @return
  */
-static Types ident_type(const Table* globals, const FunctionCollection* collection,
-                        const Function* fun, const char* ident);
+static void ident_type(const Table* globals, const FunctionCollection* collection,
+                        const Function* fun, Node* tree);
 
 /**
  * @brief Check if instructions are correcly typed
@@ -139,7 +141,7 @@ static void sort_tables(Table* globals, FunctionCollection* collection) {
 static void check_main(const FunctionCollection* collection) {
     Function* start_fun = get_function(collection, "main");
     if (!start_fun) {
-        error(ERROR, MAIN_MISSING, "no start function found");
+        error(ERROR, "no start function found");
         return;
     }
     if (start_fun->r_type != T_INT) {
@@ -149,7 +151,7 @@ static void check_main(const FunctionCollection* collection) {
         return;
     }
     if (start_fun->parameters.cur_len) {
-        error(ERROR, WRONG_PARAMETERS, "main must take no parameters");
+        error(ERROR, "main must take no parameters");
     }
 }
 
@@ -180,22 +182,24 @@ static void search_unused_symbols(const Table* globals, const FunctionCollection
 
 static void check_assignation_types(const Table* globals, const FunctionCollection* collection,
                                     const Function* fun, Node* tree) {
-    // TODO: Assignation on arrays
-    // TODO: check when value is '+55' or '-1'
-    check_instruction(globals, collection, fun, tree->firstChild);
+    check_instruction(globals, collection, fun, FIRSTCHILD(tree));
     check_instruction(globals, collection, fun, SECONDCHILD(tree));
-    Types t_dest = tree->firstChild->type;
+    Types t_dest = FIRSTCHILD(tree)->type;
     Types t_value = SECONDCHILD(tree)->type;
-    if (t_dest == T_CHAR && t_dest != t_value) {
-        assignation_error(FIRSTCHILD(tree)->val.ident,
+    if (t_dest == T_CHAR && t_value == T_INT) { // warning when casting char to int
+        assignation_error(WARNING,
+                          FIRSTCHILD(tree)->val.ident,
                           type_convert[tree->firstChild->type],
                           type_convert[SECONDCHILD(tree)->type],
                           tree->lineno, tree->colno);
-    } else if (t_dest == T_INT && t_value == T_VOID) {
-        assignation_error(FIRSTCHILD(tree)->val.ident,
-                          type_convert[tree->firstChild->type],
-                          type_convert[SECONDCHILD(tree)->type],
-                          tree->lineno, tree->colno);
+    } else if (t_dest != t_value) {
+        if (t_dest != T_INT && t_value != T_CHAR) {
+            assignation_error(ERROR,
+                              FIRSTCHILD(tree)->val.ident,
+                              type_convert[tree->firstChild->type],
+                              type_convert[SECONDCHILD(tree)->type],
+                              tree->lineno, tree->colno);
+        }
     }
 }
 
@@ -222,13 +226,41 @@ static void check_return_type(const Table* globals, const FunctionCollection* co
     }
 }
 
-static Types ident_type(const Table* globals, const FunctionCollection* collection,
-                        const Function* fun, const char* ident) {
-    Entry* entry = find_entry(globals, fun, ident);
-    if (entry) {
-        return entry->type;
+static void ident_type(const Table* globals, const FunctionCollection* collection,
+                        const Function* fun, Node* tree) {
+    Entry* entry = find_entry(globals, fun, tree->val.ident);
+    if (entry) { // ident is a variable
+        if (entry->array) {
+            if (FIRSTCHILD(tree)) {
+                check_instruction(globals, collection, fun, FIRSTCHILD(tree));
+                if (FIRSTCHILD(tree)->type == T_INT || FIRSTCHILD(tree)->type == T_CHAR) {
+                    tree->type = entry->type;
+                } else {
+                    incorrect_array_access(entry->name,
+                                           type_convert[FIRSTCHILD(tree)->type],
+                                           tree->lineno,
+                                           tree->colno);
+                    tree->type = T_INT; // set to int to continue
+                }
+            } else {
+                tree->type = T_ARRAY;
+            }
+        } else {
+            tree->type = entry->type;
+        }
+    } else { // ident is a function
+        Function* fun = get_function(collection, tree->val.ident);
+        if (FIRSTCHILD(tree)) {
+            if (FIRSTCHILD(tree)->label == NoParametres) {
+                tree->type = fun->r_type;
+            } else {
+                // TODO: check correct function call
+                tree->type = fun->r_type;
+            }
+        } else {
+            tree->type = T_FUNCTION;
+        }
     }
-    return get_function(collection, ident)->r_type;
 }
 
 // tree is the first instruction of the function
@@ -239,7 +271,7 @@ static void check_instruction(const Table* globals, const FunctionCollection* co
         case Assignation: check_assignation_types(globals, collection, fun, tree); break;
         case Character: tree->type = T_CHAR; break;
         case Num: tree->type = T_INT; break;
-        case Ident: tree->type = ident_type(globals, collection, fun, tree->val.ident); break;
+        case Ident: ident_type(globals, collection, fun, tree); break;
         case Return: check_return_type(globals, collection, fun, tree); return; // return here so we dont parse code after the return
         default: break;
     }

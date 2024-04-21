@@ -5,7 +5,7 @@
 #include "args.h"
 #include "parser.h"
 #include "table.h"
-#include "error.h"
+#include "errors.h"
 
 #define SEMANTIC_ERROR 2
 

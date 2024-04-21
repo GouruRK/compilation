@@ -1,0 +1,9 @@
+void add(void) {
+    return;
+}
+
+int main(void) {
+    int array[10];
+    array[add()] = 1;
+    return 0;
+}
