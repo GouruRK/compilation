@@ -10,6 +10,7 @@ typedef struct {
     bool err;
     bool symbols;
     char* name;
+    char* ouput;
     FILE* source;
 } Args;
 

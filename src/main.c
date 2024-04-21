@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "table.h"
 #include "errors.h"
+#include "gen_nasm.h"
 
 #define SEMANTIC_ERROR 2
 
@@ -70,6 +71,9 @@ int main(int argc, char* argv[]) {
                 print_collection(functions);
             }
             check_sem(&globals, &functions, AST);
+        }
+        if (!fatal_error()) {
+            gen_nasm(args.ouput, &globals, &functions, AST);
         }
 
         free_collection(&functions);
