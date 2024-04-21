@@ -1,0 +1,16 @@
+void add(void) {
+    return;
+}
+
+int main(void) {
+    char a, b, c;
+    int d, e, f;
+
+    a = 'a';
+    b = 5463;
+
+    d = 'a';
+    e = 5463;
+
+    return 0;
+}

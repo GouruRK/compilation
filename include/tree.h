@@ -29,6 +29,7 @@ typedef enum {
     DeclFonct,
     EnTeteFonct,
     Parametres,
+    NoParametres,
     ListTypVar,
     Corps,
     SuiteInstr,
@@ -39,6 +40,10 @@ typedef enum {
     ListExp,
     Assignation
 } label_t;
+
+typedef enum {
+    T_INT, T_CHAR, T_VOID, T_ARRAY, T_FUNCTION
+} Types;
 
 typedef union {
     int num;
@@ -51,6 +56,7 @@ typedef struct Node {
     int colno;
     int lineno;
     label_t label;
+    Types type;
     Value val;
     struct Node *firstChild, *nextSibling;
 } Node;

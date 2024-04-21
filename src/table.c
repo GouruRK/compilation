@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "error.h"
+#include "errors.h"
 
 int total_bytes = 0;
 
@@ -148,9 +148,9 @@ int compare_ident_fun(const void* ident, const void* fun) {
 static int compute_size(Types type, Node* node) {
     int size = 0;
     int additionnal = 1;
-    if (type == INT) {
+    if (type == T_INT) {
         size = S_INT;
-    } else if (type == CHAR) {
+    } else if (type == T_CHAR) {
         size = S_CHAR;
     }
     if (node->array && node->firstChild) {
@@ -211,11 +211,11 @@ static int insert_entry(Table* table, Entry entry) {
 
 static void assing_rtype(Function* fun, Node* node) {
     if (!strcmp(node->val.ident, "int")) {
-        fun->r_type = INT;
+        fun->r_type = T_INT;
     } else if (!strcmp(node->val.ident, "char")) {
-        fun->r_type = CHAR;
+        fun->r_type = T_CHAR;
     } else {
-        fun->r_type = VOID;
+        fun->r_type = T_VOID;
     }
 }
 
@@ -311,8 +311,8 @@ static int decl_var(Table* table, Types type, Node* node, Table* parameters) {
 }
 
 static Types get_type(char ident[IDENT_LEN]) {
-    if (!strcmp("int", ident)) return INT;
-    return CHAR; 
+    if (!strcmp("int", ident)) return T_INT;
+    return T_CHAR; 
 }
 
 static int decl_vars(Table* table, Node* node, Table* parameters) {
@@ -324,14 +324,6 @@ static int decl_vars(Table* table, Node* node, Table* parameters) {
         return 0;
     }
     return decl_vars(table, node->nextSibling, parameters);
-}
-
-static Entry* find_entry(Table* globals, Function* fun, char ident[IDENT_LEN]) {
-    Entry* entry;
-    if ((entry = get_entry(&fun->parameters, ident))) return entry;
-    if ((entry = get_entry(&fun->locals, ident))) return entry;
-    if ((entry = get_entry(globals, ident))) return entry;
-    return NULL;
 }
 
 static void check_used(Table* globals, Function* fun, FunctionCollection* coll, Node* node) {
@@ -375,7 +367,7 @@ int init_table(Table* table) {
     return 1;
 }
 
-int is_in_table(Table* table, char ident[IDENT_LEN]) {
+int is_in_table(const Table* table, const char ident[IDENT_LEN]) {
     if (!table || !table->cur_len) return -1;
 
     for (int i = 0; i < table->cur_len; i++) {
@@ -386,7 +378,15 @@ int is_in_table(Table* table, char ident[IDENT_LEN]) {
     return -1;
 }
 
-Entry* get_entry(Table* table, char ident[IDENT_LEN]) {
+Entry* find_entry(const Table* globals, const Function* fun, const char ident[IDENT_LEN]) {
+    Entry* entry;
+    if ((entry = get_entry(&fun->parameters, ident))) return entry;
+    if ((entry = get_entry(&fun->locals, ident))) return entry;
+    if ((entry = get_entry(globals, ident))) return entry;
+    return NULL;
+}
+
+Entry* get_entry(const Table* table, const char ident[IDENT_LEN]) {
     if (!table || !table->cur_len) return NULL;
 
     if (table->sorted) {
@@ -412,7 +412,7 @@ int init_function_collection(FunctionCollection* collection) {
     return 1;
 }
 
-int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]) {
+int is_in_collection(const FunctionCollection* collection, const char ident[IDENT_LEN]) {
     if (!collection || !collection->cur_len) return -1;
 
     for (int i = 0; i < collection->cur_len; i++) {
@@ -423,7 +423,7 @@ int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]) {
     return -1;
 }
 
-Function* get_function(FunctionCollection* collection, char ident[IDENT_LEN]) {
+Function* get_function(const FunctionCollection* collection, const char ident[IDENT_LEN]) {
     if (!collection || !collection->cur_len) return NULL;
 
     if (collection->sorted) {
@@ -497,14 +497,14 @@ void print_table(Table table) {
     for (int i = 0; i < table.cur_len; i++) {
         if (table.array[i].address >= 0) {
             printf("type: %4s | decl_line: %3d | size: %5d | address: %05xx | name: %s\n",
-                table.array[i].type == INT ? "int": "char",
+                table.array[i].type == T_INT ? "int": "char",
                 table.array[i].decl_line, 
                 table.array[i].size,
                 table.array[i].address,
                 table.array[i].name);
         } else {
             printf("type: %4s | decl_line: %3d | size: %5d | name: %s\n",
-                table.array[i].type == INT ? "int": "char",
+                table.array[i].type == T_INT ? "int": "char",
                 table.array[i].decl_line, 
                 table.array[i].size,
                 table.array[i].name);
@@ -518,12 +518,12 @@ void print_collection(FunctionCollection collection) {
         Types type = collection.funcs[i].r_type;
         putchar('\n'); 
         printf("%s %s() - Parameters:\n",
-                type == INT ? "int" : (type == CHAR ? "char": "void"),
+                type == T_INT ? "int" : (type == T_CHAR ? "char": "void"),
                 collection.funcs[i].name);
         print_table(collection.funcs[i].parameters);
 
         printf("%s %s() - Locals:\n",
-                type == INT ? "int" : (type == CHAR ? "char": "void"),
+                type == T_INT ? "int" : (type == T_CHAR ? "char": "void"),
                 collection.funcs[i].name);
         print_table(collection.funcs[i].locals);
     }

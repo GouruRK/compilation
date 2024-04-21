@@ -1,0 +1,13 @@
+int add(void) {
+    return 0;
+}
+
+int main(void) {
+    int array[10];
+
+    array[2] = 5;
+    array['a'] = 5;
+    array[add()] = 1;
+
+    return 0;
+}

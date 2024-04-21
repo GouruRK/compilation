@@ -1,0 +1,31 @@
+int add1(void) {
+    return 'a';
+}
+
+int add2(void) {
+    return 1;
+}
+
+char add4(void) {
+    return 'a';
+}
+
+char add5(void) {
+    return 1;
+}
+
+void add6(void) {
+    return;
+}
+
+void add7(void) {
+    return 'a';
+}
+
+void add8(void) {
+    return 1;
+}
+
+int main(void) {
+    return 0;
+}

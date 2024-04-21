@@ -6,10 +6,6 @@
 
 #define DEFAULT_LENGTH 10
 
-typedef enum { // type retours
-    INT, CHAR, VOID
-} Types;
-
 typedef enum { // size of types in byte
     S_INT = 4,
     S_CHAR = 1
@@ -22,7 +18,7 @@ typedef struct {            // variable
     int decl_line;          // declaration line
     int decl_col;           // declaration column
     int size;               // size in bytes
-    Types type;         // type of variable
+    Types type;             // type of variable
     char name[IDENT_LEN];   // variable name
 } Entry;
 
@@ -72,9 +68,9 @@ int init_table(Table* table);
  * @return index of the entry of the given identifiant if it is in the table
  *         else -1
  */
-int is_in_table(Table* table, char ident[IDENT_LEN]);
+int is_in_table(const Table* table, const char ident[IDENT_LEN]);
 
-Entry* get_entry(Table* table, char ident[IDENT_LEN]);
+Entry* get_entry(const Table* table, const char ident[IDENT_LEN]);
 
 /**
  * @brief Create a collection of functions 
@@ -93,9 +89,11 @@ int init_function_collection(FunctionCollection* collection);
  * @return index of the entry of the given identifiant if it is in the table
  *         else -1
  */
-int is_in_collection(FunctionCollection* collection, char ident[IDENT_LEN]);
+int is_in_collection(const FunctionCollection* collection, const char ident[IDENT_LEN]);
 
-Function* get_function(FunctionCollection* collection, char ident[IDENT_LEN]);
+Entry* find_entry(const Table* globals, const Function* fun, const char ident[IDENT_LEN]);
+
+Function* get_function(const FunctionCollection* collection, const char ident[IDENT_LEN]);
 
 /**
  * @brief Free allocated memory for table
