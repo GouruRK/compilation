@@ -263,6 +263,32 @@ static void ident_type(const Table* globals, const FunctionCollection* collectio
     }
 }
 
+static void check_arithm_type(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree) {
+    check_instruction(globals, collection, fun, FIRSTCHILD(tree));
+    check_instruction(globals, collection, fun, SECONDCHILD(tree));
+    Types ltype = FIRSTCHILD(tree)->type;
+    if (tree->label == AddSub) {
+        if (!(SECONDCHILD(tree))) { // unary plus or minus
+            if (ltype != T_INT && ltype != T_CHAR) {
+                invalid_operation(tree->val.ident, type_convert[ltype],
+                                  tree->lineno, tree->colno);
+                tree->type = T_INT;
+            }
+            return;
+        }
+    }
+    Types rtype = SECONDCHILD(tree)->type;
+    if (ltype != T_INT && ltype != T_CHAR) {
+        invalid_operation(tree->val.ident, type_convert[ltype],
+                            tree->lineno, tree->colno);
+    } else if (rtype != T_INT && rtype != T_CHAR) {
+        invalid_operation(tree->val.ident, type_convert[rtype],
+                            tree->lineno, tree->colno);
+    }
+    tree->type = T_INT;
+}
+
 // tree is the first instruction of the function
 static void check_instruction(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
@@ -273,6 +299,9 @@ static void check_instruction(const Table* globals, const FunctionCollection* co
         case Num: tree->type = T_INT; break;
         case Ident: ident_type(globals, collection, fun, tree); break;
         case Return: check_return_type(globals, collection, fun, tree); return; // return here so we dont parse code after the return
+        case Eq: case Order:
+        case Or: case And: case Negation:
+        case DivStar: case AddSub: check_arithm_type(globals, collection, fun, tree); break;
         default: break;
     }
     check_instruction(globals, collection, fun, tree->nextSibling);

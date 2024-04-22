@@ -1,0 +1,8 @@
+int main(void) {
+    int array[30];
+
+    int a;
+
+    a = 4 + array;
+    return 0;
+}

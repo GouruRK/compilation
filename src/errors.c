@@ -114,7 +114,7 @@ void assignation_error(ErrorType type, const char* symbol, const char* dest_type
     snprintf(err.message, ERROR_LEN,
              "trying to assign to '%s' of type '%s' a value of type '%s'",
              symbol, dest_type, source_type);
-    print_error(&err);     
+    print_error(&err);
 }
 
 void redefinition_of_builtin_functions(const char* function, int line,
@@ -139,6 +139,19 @@ void incorrect_array_access(const char* name, const char* access_type, int line,
     snprintf(err.message, ERROR_LEN,
              "trying to access array '%s' with an expression of type '%s'",
              name, access_type);
+    print_error(&err);
+}
+
+void invalid_operation(const char* operation, const char* type, int line,
+                       int col) {
+    Error err = (Error){.type = ERROR,
+                        .line = line,
+                        .col = col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "invalid operation '%s' on type '%s'",
+             operation, type);
     print_error(&err);
 }
 

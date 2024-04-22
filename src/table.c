@@ -278,7 +278,9 @@ static int insert_function(FunctionCollection* collection, Function fun) {
     }
 
     if (collection->cur_len == collection->max_len) {
-        if (!realloc_collection(collection)) return 0;
+        if (!realloc_collection(collection)) {
+            return 0;
+        }
     }
 
     collection->funcs[collection->cur_len] = fun;
@@ -397,6 +399,7 @@ Entry* get_entry(const Table* table, const char ident[IDENT_LEN]) {
 int init_function_collection(FunctionCollection* collection) {
     if (!collection) return 0;
 
+    collection->sorted = false;
     collection->cur_len = 0;
     collection->funcs = (Function*)malloc(sizeof(Function)*DEFAULT_LENGTH);
 
@@ -422,11 +425,11 @@ int is_in_collection(const FunctionCollection* collection, const char ident[IDEN
 
 Function* get_function(const FunctionCollection* collection, const char ident[IDENT_LEN]) {
     if (!collection || !collection->cur_len) return NULL;
-
+    
     if (collection->sorted) {
         return bsearch(ident, collection->funcs, collection->cur_len, sizeof(Function),
-        compare_ident_fun);
-    } 
+                       compare_ident_fun);
+    }
     int index = is_in_collection(collection, ident);
     return index == -1 ? NULL: &(collection->funcs[index]);
 }
