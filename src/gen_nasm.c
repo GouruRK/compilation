@@ -9,9 +9,10 @@ static void write_init(int globals_size) {
                  "extern getchar\n"
                  "extern putint\n"
                  "extern getint\n"
-                 "\nglobal _start\n\n"
                  "section .bss\n"
-                 "globals: resb %d\n"
+                 "\tglobals: resb %d\n"
+                 "\nsection .text\n"
+                 "\nglobal _start\n\n"
                  "\n_start:\n", 
                  globals_size);
 }
@@ -28,7 +29,7 @@ static int create_file(char* output) {
         output = "prog";
     }
     char filename[64];
-    snprintf(filename, 64, "%s.asm", output);
+    snprintf(filename, 64, "obj/%s.asm", output);
 
     out = fopen(filename, "w");
     return out != NULL;
@@ -40,7 +41,7 @@ void gen_nasm(char* output, Table* globals, FunctionCollection* collection, Node
     if (!create_file(output)) {
         return;
     }
-    write_init(globals->cur_len); // TODO: replace this value by the number of bytes used for globals
+    write_init(globals->total_bytes);
 
     // ...
 

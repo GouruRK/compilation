@@ -146,13 +146,8 @@ int compare_ident_fun(const void* ident, const void* fun) {
 }
 
 static int compute_size(Types type, Node* node) {
-    int size = 0;
+    int size = 8;               // size of int and char is 8 bytes 
     int additionnal = 1;
-    if (type == T_INT) {
-        size = S_INT;
-    } else if (type == T_CHAR) {
-        size = S_CHAR;
-    }
     if (node->array && node->firstChild) {
         additionnal = node->firstChild->val.num;
     }
@@ -205,6 +200,7 @@ static int insert_entry(Table* table, Entry entry) {
     }
 
     table->array[table->cur_len] = entry;
+    table->total_bytes += entry.size;
     table->cur_len++;
     return 1;
 }
@@ -354,6 +350,7 @@ static void check_used(Table* globals, Function* fun, FunctionCollection* coll, 
 int init_table(Table* table) {
     if (!table) return 0;
 
+    table->total_bytes = 0;
     table->sorted = false;
     table->cur_len = 0;
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);

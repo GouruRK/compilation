@@ -6,11 +6,6 @@
 
 #define DEFAULT_LENGTH 10
 
-typedef enum { // size of types in byte
-    S_INT = 4,
-    S_CHAR = 1
-} TypeSize;
-
 typedef struct {            // variable
     bool array;             // if variable is an array
     bool is_used;           // if used
@@ -26,6 +21,7 @@ typedef struct {            // symbol table
     bool sorted;            // if entries has been sorted by name
     int cur_len;            // curent length of the table
     int max_len;            // maximum length of the table
+    int total_bytes;        // bytes used in the table
     Entry* array;           // entry array
 } Table;
 
