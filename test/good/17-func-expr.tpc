@@ -9,16 +9,16 @@ int f(char a, char e, int c) {
 
     temp = (c % 2) == 0;
 
-    r = add((a*e + temp) / c);
+    r = add(0, (a*e + temp) / c);
     return r;
 }
 
 void g(int a1, int b, int c, int d, int e, int f) {
-    a = add(a1 + b - c / d * e % f == 0 != 1);
+    a = add(a1 + b - c / d * e % f == 0 != 1, 0);
 }
 
 int main(void) {
     g(1, 2, 3, 4, 5, 6);
-    f('a'+ 'B' - 8979, 'b', 0);
+    f('a' + 'B' - 8979, 'b', 0);
     return 0;
 }

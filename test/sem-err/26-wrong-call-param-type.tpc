@@ -1,0 +1,11 @@
+int add(int a, int b) {
+    return a + b;
+}
+
+int temp(void) {
+    return 0;
+}
+
+int main(void) {
+    return add(temp, temp());
+}

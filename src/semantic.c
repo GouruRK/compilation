@@ -133,7 +133,7 @@ static void sort_tables(Table* globals, FunctionCollection* collection) {
     sort_collection(collection);
     for (int i = 0; i < collection->cur_len; i++) {
         sort_table(&(collection->funcs[i].locals));
-        sort_table(&(collection->funcs[i].parameters));
+        // dont sort parameters in order to correctly check the variables in the call
     }
 }
 
@@ -226,6 +226,35 @@ static void check_return_type(const Table* globals, const FunctionCollection* co
     }
 }
 
+static void check_parameters(const Table* globals, const FunctionCollection* collection,
+                             const Function* fun, const Function* called, Node* tree) {
+    Node* head = tree;
+    Entry entry;
+    int i;
+    for (i = 0; head != NULL && i < called->parameters.cur_len; i++) {
+        check_instruction(globals, collection, fun, head);
+        entry = called->parameters.array[i];
+        if (head->type != entry.type) {
+            if (entry.type == T_INT && head->type == T_CHAR) {
+                head = head->nextSibling;
+                continue;
+            }
+            ErrorType type = ERROR;
+            if (head->type == T_INT && entry.type == T_CHAR) {
+                type = WARNING;
+            }
+            invalid_parameter_type(type, called->name, entry.name,
+                                   type_convert[entry.type],
+                                   type_convert[head->type],
+                                   head->lineno, head->colno);
+        }
+        head = head->nextSibling;
+    }
+    if (head != NULL || i != called->parameters.cur_len) {
+        incorrect_function_call(called->name, tree->lineno, tree->colno);
+    }
+}
+
 static void ident_type(const Table* globals, const FunctionCollection* collection,
                         const Function* fun, Node* tree) {
     Entry* entry = find_entry(globals, fun, tree->val.ident);
@@ -249,13 +278,16 @@ static void ident_type(const Table* globals, const FunctionCollection* collectio
             tree->type = entry->type;
         }
     } else { // ident is a function
-        Function* fun = get_function(collection, tree->val.ident);
+        Function* function = get_function(collection, tree->val.ident);
         if (FIRSTCHILD(tree)) {
             if (FIRSTCHILD(tree)->label == NoParametres) {
-                tree->type = fun->r_type;
+                if (function->parameters.cur_len) {
+                    incorrect_function_call(function->name, tree->lineno, tree->colno);
+                }
+                tree->type = function->r_type;
             } else {
-                // TODO: check correct function call
-                tree->type = fun->r_type;
+                check_parameters(globals, collection, fun, function, FIRSTCHILD(FIRSTCHILD(tree)));
+                tree->type = function->r_type;
             }
         } else {
             tree->type = T_FUNCTION;

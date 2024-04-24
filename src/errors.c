@@ -162,7 +162,32 @@ void invalid_condition(const char* type, int line, int col) {
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
-             "invalid type for condition: expected 'int', got '%s'", type);             
+             "invalid type for condition: expected 'int', got '%s'", type);
+    print_error(&err);
+}
+
+void incorrect_function_call(const char* function, int line, int col) {
+    Error err = (Error){.type = ERROR,
+                        .line = line,
+                        .col = col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "incorrect function '%s' call", function);
+    print_error(&err);
+}
+
+void invalid_parameter_type(ErrorType type, const char* function,
+                            const char* param_name, const char* expected,
+                            const char* current, int line, int col) {
+    Error err = (Error){.type = type,
+                        .line = line,
+                        .col = col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "incorrect parameter '%s' type while trying to call '%s': expected type"
+             " '%s', got '%s'", param_name, function, expected, current);
     print_error(&err);
 }
 
