@@ -289,6 +289,15 @@ static void check_arithm_type(const Table* globals, const FunctionCollection* co
     tree->type = T_INT;
 }
 
+static void check_cond_type(const Table* globals, const FunctionCollection* collection,
+                            const Function* fun, Node* tree) {
+    check_instruction(globals, collection, fun, FIRSTCHILD(tree));
+    if (FIRSTCHILD(tree)->type != T_INT && FIRSTCHILD(tree)->type != T_CHAR) {
+        invalid_condition(type_convert[FIRSTCHILD(tree)->type], tree->lineno,
+                          tree->colno);
+    }
+}
+
 // tree is the first instruction of the function
 static void check_instruction(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
@@ -302,6 +311,7 @@ static void check_instruction(const Table* globals, const FunctionCollection* co
         case Eq: case Order:
         case Or: case And: case Negation:
         case DivStar: case AddSub: check_arithm_type(globals, collection, fun, tree); break;
+        case If: case While: check_cond_type(globals, collection, fun, tree); break;
         default: break;
     }
     check_instruction(globals, collection, fun, tree->nextSibling);

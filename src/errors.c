@@ -155,6 +155,17 @@ void invalid_operation(const char* operation, const char* type, int line,
     print_error(&err);
 }
 
+void invalid_condition(const char* type, int line, int col) {
+    Error err = (Error){.type = ERROR,
+                        .line = line,
+                        .col = col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "invalid type for condition: expected 'int', got '%s'", type);             
+    print_error(&err);
+}
+
 void error(ErrorType type, const char* message) {
     Error err = (Error){.type = type, .has_line = false};
     strcpy(err.message, message);

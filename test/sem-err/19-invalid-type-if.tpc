@@ -1,0 +1,8 @@
+int main(void) {
+    int array[50];
+
+    if (array) {
+        return 1;
+    }
+    return 0;
+}

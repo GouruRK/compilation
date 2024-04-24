@@ -48,6 +48,7 @@ void assignation_error(ErrorType type, const char* symbol, const char* dest_type
 void redefinition_of_builtin_functions(const char* function, int line, int col);
 void incorrect_array_access(const char* name, const char* access_type, int line, int col);
 void invalid_operation(const char* operation, const char* type, int line, int col);
+void invalid_condition(const char* type, int line, int col);
 
 /**
  * @brief Check if any errors has been registered

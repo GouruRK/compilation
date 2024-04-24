@@ -1,0 +1,10 @@
+void add(void) {
+    return;
+}
+
+int main(void) {
+    if (add) {
+        return 1;
+    }
+    return 0;
+}

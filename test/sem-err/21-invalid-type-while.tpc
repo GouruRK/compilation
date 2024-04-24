@@ -1,0 +1,8 @@
+int main(void) {
+    int array[50];
+
+    while (array) {
+        return 0;
+    }
+    return 0;
+}

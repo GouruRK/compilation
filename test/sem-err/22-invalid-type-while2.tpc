@@ -1,0 +1,10 @@
+void add(void) {
+    return;
+}
+
+int main(void) {
+    while (add) {
+        return 0;
+    }
+    return 0;
+}
