@@ -10,6 +10,8 @@ BUILD_DIR=obj
 BIN_DIR=bin
 BUILTIN_DIR=builtin
 
+ZIP_TARGET=ProjetCompilationL3_ALVES_KIES.zip
+
 SOURCES=$(wildcard $(SRC_DIR)/*.c)
 SRC_OBJS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 
@@ -51,6 +53,10 @@ clean:
 
 mrproper: clean
 	rm -f bin/*
+
+zip: mrproper
+	rm -f $(ZIP_TARGET)
+	zip -r $(ZIP_TARGET) builtin/ include/ rep/ src/ test/ makefile runtests.sh
 
 test: $(BIN_DIR)/$(EXEC)
 	@chmod u+x test
