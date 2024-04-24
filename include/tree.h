@@ -42,7 +42,7 @@ typedef enum {
 } label_t;
 
 typedef enum {
-    T_INT, T_CHAR, T_VOID, T_ARRAY, T_FUNCTION
+    T_INT, T_CHAR, T_VOID, T_ARRAY, T_FUNCTION, T_NONE
 } Types;
 
 typedef union {

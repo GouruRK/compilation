@@ -6,6 +6,21 @@
 
 #include "errors.h"
 
+#define NB_BUILTIN 4
+
+typedef struct {
+    char* name;
+    Types r_type;
+    Types param;
+} builtin;
+
+static const builtin builtin_funcs[NB_BUILTIN] = {
+    {"getint", T_INT, T_NONE},
+    {"putint", T_VOID, T_INT},
+    {"getchar", T_CHAR, T_NONE},
+    {"putchar", T_VOID, T_NONE}
+};
+
 int total_bytes = 0;
 
 /**
@@ -349,6 +364,50 @@ static void check_used(Table* globals, Function* fun, FunctionCollection* coll, 
     check_used(globals, fun, coll, node->nextSibling);
 }
 
+static int create_builtin_function(Function* fun, builtin spe) {
+    *fun = (Function){.decl_col = -1,
+                      .decl_line = -1,
+                      .is_used = true,
+                      .r_type = spe.r_type
+                      };
+    strcpy(fun->name, spe.name);
+    if (!init_table(&fun->parameters)) {
+        return 0;
+    }
+    if (spe.param != T_NONE) {
+        Entry entry = (Entry){.address = -1,
+                              .array = false,
+                              .decl_col = -1,
+                              .decl_line = -1,
+                              .is_used = true,
+                              .name = "arg",
+                              .size = 8,
+                              .type = spe.param};
+        if (!insert_entry(&fun->parameters, entry)) {
+            free_table(&fun->parameters);
+            return 0;
+        }
+    }
+    if (!init_table(&fun->locals)) {
+        free_table(&fun->parameters);
+        return 0;
+    }
+    return 1;
+}
+
+static int insert_builtin_functions(FunctionCollection* coll) {
+    for (int i = 0; i < NB_BUILTIN; i++) {
+        Function fun;
+        if (!create_builtin_function(&fun, builtin_funcs[i])) {
+            return 0;
+        }
+        if (!insert_function(coll, fun)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int init_table(Table* table) {
     if (!table) return 0;
 
@@ -409,6 +468,11 @@ int init_function_collection(FunctionCollection* collection) {
         return 0;
     }
     collection->max_len = DEFAULT_LENGTH;
+    if (!insert_builtin_functions(collection)) {
+        memory_error();
+        free_collection(collection);
+        return 0;
+    }
     return 1;
 }
 
@@ -515,6 +579,9 @@ void print_table(Table table) {
 
 void print_collection(FunctionCollection collection) {
     for (int i = 0; i < collection.cur_len; i++) {
+        // if (collection.funcs[i].decl_line == -1) {
+        //     continue; // do not print builtin functions
+        // }
         Types type = collection.funcs[i].r_type;
         putchar('\n'); 
         printf("%s %s() - Parameters:\n",

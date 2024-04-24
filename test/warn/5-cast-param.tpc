@@ -1,0 +1,7 @@
+int add(char a) {
+    return a;
+}
+
+int main(void) {
+    return add(0);
+}
