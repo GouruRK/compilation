@@ -144,6 +144,25 @@ static Types get_type(char ident[IDENT_LEN]);
  */
 static int decl_vars(Table* table, Node* node, Table* parameters);
 
+/**
+ * @brief Create a builtin function according to the given specification
+ * 
+ * @param fun function to create
+ * @param spe indications to create the function
+ * @return 1 if success
+ *         0 if fail due to memory error
+ */
+static int create_builtin_function(Function* fun, builtin spe);
+
+/**
+ * @brief Create and insert all builtin functions
+ * 
+ * @param coll collection to insert the functions
+ * @return 1 if success
+ *         0 if fail due to memory error
+ */
+static int insert_builtin_functions(FunctionCollection* coll);
+
 int compare_entries(const void* entry1, const void* entry2) {
     return strcmp(((Entry*)entry1)->name, ((Entry*)entry2)->name);
 }

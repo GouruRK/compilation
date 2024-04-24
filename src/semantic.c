@@ -87,6 +87,19 @@ static void check_return_type(const Table* globals, const FunctionCollection* co
                               const Function* fun, Node* tree);
 
 /**
+ * @brief Check if the parameters to a function are correct, in terms of 
+ *        order, number and type
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the other function call is
+ * @param called function to be called
+ * @param tree node of parameters
+ */
+static void check_parameters(const Table* globals, const FunctionCollection* collection,
+                             const Function* fun, const Function* called, Node* tree);
+
+/**
  * @brief Get the type of an identifier. For functions, it is their return type
  * 
  * @param globals global's table
@@ -170,8 +183,6 @@ static void search_unused_symbol_table(const Table* table, const char* source) {
 }
 
 static void search_unused_symbols(const Table* globals, const FunctionCollection* collection) {
-    // TODO: if symbol is one of the builtin functions, continue
-    // (because we prevent redefinition of builtin functions...)
     search_unused_symbol_table(globals, NULL);
     for (int i = 0; i < collection->cur_len; i++) {
         Function fun = collection->funcs[i];
