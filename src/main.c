@@ -70,9 +70,10 @@ int main(int argc, char* argv[]) {
                 print_table(globals);
                 print_collection(functions);
             }
-            check_sem(&globals, &functions, AST);
+            
         }
         if (!fatal_error()) {
+            check_sem(&globals, &functions, AST);
             // TODO: uncomment this when generating nasm
             // gen_nasm(args.ouput, &globals, &functions, AST);
         }
