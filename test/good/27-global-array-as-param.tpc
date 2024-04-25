@@ -1,0 +1,11 @@
+int array[2];
+
+int sum(int array[]) {
+    return array[0] + array[1];
+}
+
+int main(void) {
+    array[0] = 1;
+    array[1] = 2;
+    return sum(array);
+}

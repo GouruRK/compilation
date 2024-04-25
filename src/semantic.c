@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "table.h"
 #include "errors.h"
@@ -246,17 +247,18 @@ static void check_parameters(const Table* globals, const FunctionCollection* col
     for (i = 0; head != NULL && i < called->parameters.cur_len; i++) {
         check_instruction(globals, collection, fun, head);
         entry = called->parameters.array[i];
-        if (head->type != entry.type) {
-            if (entry.type == T_INT && head->type == T_CHAR) {
+        Types entry_type = entry.array ? T_ARRAY: entry.type;
+        if (head->type != entry_type) {
+            if (entry_type == T_INT && head->type == T_CHAR) {
                 head = head->nextSibling;
                 continue;
             }
             ErrorType type = ERROR;
-            if (head->type == T_INT && entry.type == T_CHAR) {
+            if (head->type == T_INT && entry_type == T_CHAR) {
                 type = WARNING;
             }
             invalid_parameter_type(type, called->name, entry.name,
-                                   type_convert[entry.type],
+                                   type_convert[entry_type],
                                    type_convert[head->type],
                                    head->lineno, head->colno);
         }
@@ -272,11 +274,11 @@ static void ident_type(const Table* globals, const FunctionCollection* collectio
     Entry* entry = find_entry(globals, fun, tree->val.ident);
     if (entry) { // ident is a variable
         if (entry->array) {
-            if (FIRSTCHILD(tree)) {
+            if (FIRSTCHILD(tree)) { // trying to access the array
                 check_instruction(globals, collection, fun, FIRSTCHILD(tree));
                 if (FIRSTCHILD(tree)->type == T_INT || FIRSTCHILD(tree)->type == T_CHAR) {
                     tree->type = entry->type;
-                } else {
+                } else { //incorrect type to access
                     incorrect_array_access(entry->name,
                                            type_convert[FIRSTCHILD(tree)->type],
                                            tree->lineno,
@@ -305,6 +307,7 @@ static void ident_type(const Table* globals, const FunctionCollection* collectio
             tree->type = T_FUNCTION;
         }
     }
+    // printf("%s (%d) -> %s\n", tree->val.ident, tree->array, type_convert[tree->type]);
 }
 
 static void check_arithm_type(const Table* globals, const FunctionCollection* collection,
@@ -319,6 +322,7 @@ static void check_arithm_type(const Table* globals, const FunctionCollection* co
                                   tree->lineno, tree->colno);
                 tree->type = T_INT;
             }
+            tree->type = ltype;
             return;
         }
     }

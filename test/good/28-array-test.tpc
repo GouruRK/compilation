@@ -1,0 +1,26 @@
+int prod(int array[], int size) {
+    int i, res;
+
+    i = 0;
+    res = 1;
+    while (i < size) {
+        res = res * array[i];
+        i = i + 1;
+    }
+    return res;
+}
+
+int main(void) {
+    char letters[5], letter;
+    int size, i;
+
+    size = 5;
+    letter = 'a';
+    i = 0;
+    while (i < size) {
+        letters[i % size] = letter + i;
+    }
+
+    putint(prod(letters, size));
+    return 0;
+}

@@ -580,17 +580,19 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
 void print_table(Table table) {
     for (int i = 0; i < table.cur_len; i++) {
         if (table.array[i].address >= 0) {
-            printf("type: %4s | decl_line: %3d | size: %5d | address: %05xx | name: %s\n",
+            printf("type: %4s | decl_line: %3d | size: %5d | address: %05xx | array: %s | name: %s\n",
                 table.array[i].type == T_INT ? "int": "char",
                 table.array[i].decl_line, 
                 table.array[i].size,
                 table.array[i].address,
+                table.array[i].array ? "true": "false",
                 table.array[i].name);
         } else {
-            printf("type: %4s | decl_line: %3d | size: %5d | name: %s\n",
+            printf("type: %4s | decl_line: %3d | size: %5d | array: %s | name: %s\n",
                 table.array[i].type == T_INT ? "int": "char",
                 table.array[i].decl_line, 
                 table.array[i].size,
+                table.array[i].array ? "true": "false",
                 table.array[i].name);
         }
 
@@ -599,9 +601,9 @@ void print_table(Table table) {
 
 void print_collection(FunctionCollection collection) {
     for (int i = 0; i < collection.cur_len; i++) {
-        // if (collection.funcs[i].decl_line == -1) {
-        //     continue; // do not print builtin functions
-        // }
+        if (collection.funcs[i].decl_line == -1) {
+            continue; // do not print builtin functions
+        }
         Types type = collection.funcs[i].r_type;
         putchar('\n'); 
         printf("%s %s() - Parameters:\n",

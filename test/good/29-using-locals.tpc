@@ -1,0 +1,10 @@
+int res(void) {
+    return 0;
+}
+
+int main(void) {
+    int res;
+
+    res = 1 + 2 + 3 + (4 == 5) - 1 / 2;
+    return res;
+}

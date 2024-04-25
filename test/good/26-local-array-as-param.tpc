@@ -1,0 +1,8 @@
+int sum(int a[]) {
+    return a[0] + a[1];
+}
+
+int main(void) {
+    int array[50];
+    return sum(array);
+}
