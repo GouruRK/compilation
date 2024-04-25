@@ -56,7 +56,7 @@ mrproper: clean
 
 zip: mrproper
 	rm -f $(ZIP_TARGET)
-	zip -r $(ZIP_TARGET) builtin/ include/ rep/ src/ test/ makefile runtests.sh
+	zip -r $(ZIP_TARGET) include/ src/ makefile
 
 test: $(BIN_DIR)/$(EXEC)
 	@chmod u+x test
