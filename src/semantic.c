@@ -11,7 +11,8 @@ static const char* type_convert[] = {
     [T_INT] = "int",
     [T_VOID] = "void",
     [T_ARRAY] = "array",
-    [T_FUNCTION] = "function"
+    [T_FUNCTION] = "function",
+    [T_NONE] = "none"
 };
 
 /**
@@ -225,12 +226,12 @@ static void check_return_type(const Table* globals, const FunctionCollection* co
     }
 
     if (fun->r_type != child_type) {
-        if (child_type == T_VOID) {
-            wrong_rtype_error(ERROR, fun->name, type_convert[child_type],
+        if (fun->r_type == T_CHAR && child_type == T_INT) {
+            wrong_rtype_error(WARNING, fun->name, type_convert[child_type],
                             type_convert[fun->r_type], tree->lineno,
                             tree->colno);
-        } else if (fun->r_type == T_CHAR && child_type == T_INT) {
-            wrong_rtype_error(WARNING, fun->name, type_convert[child_type],
+        } else if (fun->r_type != T_INT || child_type != T_CHAR) {
+            wrong_rtype_error(ERROR, fun->name, type_convert[child_type],
                             type_convert[fun->r_type], tree->lineno,
                             tree->colno);
         }

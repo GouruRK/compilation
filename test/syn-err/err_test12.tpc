@@ -1,4 +1,0 @@
-int main(void) {
-    int tab[a];
-    int tab[f(5)];
-}

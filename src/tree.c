@@ -55,6 +55,7 @@ Node *makeNode(label_t label) {
     node->lineno = lineno;
     node->colno = colno;
     node->array = false;
+    node->type = T_NONE;
     return node;
 }
 
@@ -74,6 +75,8 @@ Node *makeNodeWithValue(Value val, label_t label) {
         node->type = T_INT;
     } else if (label == Character) {
         node->type = T_CHAR;
+    } else {
+        node->type = T_NONE;
     }
     return node;
 }

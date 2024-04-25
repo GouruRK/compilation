@@ -6,7 +6,7 @@ int add(int a, int b) {
     return c;
 }
 
-char sub(char a, char b) {
+int sub(char a, char b) {
     return a - b;
 }
 

@@ -59,5 +59,5 @@ zip: mrproper
 	zip -r $(ZIP_TARGET) include/ src/ makefile
 
 test: $(BIN_DIR)/$(EXEC)
-	@chmod u+x test
+	@chmod u+x runtests.sh
 	./runtests.sh

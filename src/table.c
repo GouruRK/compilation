@@ -15,10 +15,10 @@ typedef struct {
 } builtin;
 
 static const builtin builtin_funcs[NB_BUILTIN] = {
-    {"getint", T_INT, T_NONE},
-    {"putint", T_VOID, T_INT},
-    {"getchar", T_CHAR, T_NONE},
-    {"putchar", T_VOID, T_NONE}
+    {.name = "getint",  .r_type = T_INT,  .param = T_VOID},
+    {.name = "putint",  .r_type = T_VOID, .param = T_INT},
+    {.name = "getchar", .r_type = T_CHAR, .param = T_VOID},
+    {.name = "putchar", .r_type = T_VOID, .param = T_CHAR}
 };
 
 int total_bytes = 0;
@@ -393,7 +393,7 @@ static int create_builtin_function(Function* fun, builtin spe) {
     if (!init_table(&fun->parameters)) {
         return 0;
     }
-    if (spe.param != T_NONE) {
+    if (spe.param != T_VOID) {
         Entry entry = (Entry){.address = -1,
                               .array = false,
                               .decl_col = -1,
@@ -563,11 +563,12 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
             return 0;
         }
         
-        check_used(globals, &fun, collection, node->firstChild->nextSibling);
-        
         if (!insert_function(collection, fun)) {
             return 0;
         }
+        
+        check_used(globals, &fun, collection, node->firstChild->nextSibling);
+        
         return create_tables(globals, collection, node->nextSibling);
     }
     if (!create_tables(globals, collection, node->firstChild)) {

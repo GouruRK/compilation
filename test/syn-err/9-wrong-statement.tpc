@@ -1,0 +1,4 @@
+void main(void) {
+    a int = 5;
+    return 0;
+}

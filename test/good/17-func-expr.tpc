@@ -4,7 +4,7 @@ int add(int a, int b) {
     return a + b;
 }
 
-int f(char a, char e, int c) {
+int f(int a, char e, int c) {
     int temp, r;
 
     temp = (c % 2) == 0;

@@ -146,8 +146,6 @@ Instr:
                                               addChild($$, $5); }
     |  IDENT '(' Arguments ')' ';'          { $$ = makeNodeWithValue(to_str($1), Ident);
                                               addChild($$, $3); }
-    |  IDENT '[' Exp ']' ';'                { $$ = makeNodeWithValue(to_str($1), Ident);
-                                              addChild($$, $3); }
     |  RETURN Exp ';'                       { $$ = makeNode(Return);
                                               addChild($$, $2); }
     |  RETURN ';'                           { $$ = makeNode(Return); }

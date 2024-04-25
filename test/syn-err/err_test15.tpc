@@ -1,4 +1,0 @@
-int main(void) {
-    int ty, res;
-    res = ty === 41;
-}
