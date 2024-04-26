@@ -1,0 +1,9 @@
+int main(void) {
+    if (1) {
+        return 1;
+    } else if ('a') {
+        return 0;
+    } else {
+        return 2;
+    }
+}

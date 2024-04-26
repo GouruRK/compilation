@@ -344,6 +344,14 @@ static int check_arithm_type(const Table* globals, const FunctionCollection* col
             tree->type = ltype;
             return 1;
         }
+    } else if (tree->label == Negation) {
+        if (ltype != T_INT && ltype != T_CHAR) {
+                invalid_operation(tree->val.ident, type_convert[ltype],
+                                  tree->lineno, tree->colno);
+                return 0;
+            }
+            tree->type = ltype;
+            return 1;
     }
     Types rtype = SECONDCHILD(tree)->type;
     if (ltype != T_INT && ltype != T_CHAR) {

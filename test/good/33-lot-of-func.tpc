@@ -1,0 +1,28 @@
+void a(void) { return; }
+void b(void) { return; }
+void c(void) { return; }
+void d(void) { return; }
+void e(void) { return; }
+void f(void) { return; }
+void g(void) { return; }
+void h(void) { return; }
+void i(void) { return; }
+void j(void) { return; }
+void k(void) { return; }
+void l(void) { return; }
+
+int main(void) {
+    a();
+    b();
+    c();
+    d();
+    e();
+    f();
+    g();
+    h();
+    i();
+    j();
+    k();
+    l();
+    return 0;
+}

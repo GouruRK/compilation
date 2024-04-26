@@ -1,0 +1,11 @@
+int add(int a, int b, char c, char d, int e[], int f[], char g[], char h[],
+        char i, int j[], int k, char l[]) {
+    return 0;
+}
+
+int main(void) {
+    int a[1];
+    char b[1];
+
+    return add(0, 1, 'a', 'b', a, a, b, b, 'c', a, 2, b);
+}
