@@ -107,6 +107,7 @@ void incorrect_function_call(const char* function, int line, int col);
 void invalid_parameter_type(ErrorType type, const char* function,
                             const char* param_name, const char* expected,
                             const char* current, int line, int col);
+void incorrect_symbol_use(const char* symbol, const char* sym_type, const char* other_type, int line, int col);
 void error(ErrorType type, const char* message);
 
 /**

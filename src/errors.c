@@ -191,6 +191,19 @@ void invalid_parameter_type(ErrorType type, const char* function,
     print_error(&err);
 }
 
+void incorrect_symbol_use(const char* symbol, const char* sym_type,
+                          const char* other_type, int line, int col) {
+    Error err = (Error){.type = ERROR,
+                        .line = line,
+                        .col = col,
+                        .has_line = true
+                        };
+    snprintf(err.message, ERROR_LEN,
+             "entry %s of type %s is not typed %s",
+             symbol, sym_type, other_type);
+    print_error(&err);
+}
+
 void error(ErrorType type, const char* message) {
     Error err = (Error){.type = type, .has_line = false};
     strcpy(err.message, message);

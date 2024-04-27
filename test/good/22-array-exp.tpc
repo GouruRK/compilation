@@ -7,7 +7,7 @@ int add(char a, char b) {
 }
 
 int main(void) {
-    int b, a[50], c[2], duration;
+    int b, a[50], c[2], duration[10];
     int now, span;
 
     char string[20], d;

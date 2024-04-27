@@ -306,6 +306,14 @@ static int ident_type(const Table* globals, const FunctionCollection* collection
             } else {
                 tree->type = T_ARRAY;
             }
+        } else if (FIRSTCHILD(tree)) {
+            if (FIRSTCHILD(tree)->label == NoParametres) {
+                incorrect_symbol_use(entry->name, type_convert[entry->type],
+                                     type_convert[T_FUNCTION], tree->lineno, tree->colno);
+            }
+            incorrect_symbol_use(entry->name, type_convert[entry->type],
+                                type_convert[T_ARRAY], tree->lineno, tree->colno);
+            return 0;
         } else {
             tree->type = entry->type;
         }
@@ -318,9 +326,13 @@ static int ident_type(const Table* globals, const FunctionCollection* collection
                     return 0;
                 }
                 tree->type = function->r_type;
-            } else {
+            } else if (FIRSTCHILD(tree)->label == ListExp) {
                 if (!check_parameters(globals, collection, fun, function, FIRSTCHILD(FIRSTCHILD(tree)))) return 0;
                 tree->type = function->r_type;
+            } else {
+                incorrect_symbol_use(function->name, type_convert[T_FUNCTION],
+                                type_convert[T_ARRAY], tree->lineno, tree->colno);
+                return 0;
             }
         } else {
             tree->type = T_FUNCTION;
