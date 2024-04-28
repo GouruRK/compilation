@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "tree.h"
 #include "args.h"
@@ -217,6 +218,10 @@ ListExp:
 %%
 
 Value to_str(char* val) {
+    if (strlen(val) >= IDENT_LEN) {
+        yyerror(NULL, "identifier too long");
+        exit(1);
+    }
     Value v;
     strcpy(v.ident, val);
     return v;

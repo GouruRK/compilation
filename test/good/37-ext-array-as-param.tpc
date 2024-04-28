@@ -1,0 +1,16 @@
+char array[50];
+
+int add(int a[], int size) {
+    int i, res;
+
+    res = 0;
+    i = 0;
+    while (i < size) {
+        res = res + a[i];
+    }
+    return res;
+}
+
+int main(void) {
+    return add(array, 50);
+}

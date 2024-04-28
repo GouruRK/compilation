@@ -166,10 +166,10 @@ static int check_main(const FunctionCollection* collection) {
         return 0;
     }
     if (start_fun->r_type != T_INT) {
-        wrong_rtype_error(WARNING, "main", type_convert[start_fun->r_type],
+        wrong_rtype_error(ERROR, "main", type_convert[start_fun->r_type],
                           type_convert[T_INT], start_fun->decl_line,
                           start_fun->decl_col);
-        return 1; // when its a warning we continue
+        return 0;
     }
     if (start_fun->parameters.cur_len) {
         error(ERROR, "main must take no parameters");
