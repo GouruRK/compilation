@@ -2,10 +2,18 @@ global getint
 extern getchar
 section .text
 
-; Registres
-; r12: flags si negatif
-; rax: valeur de retour de getchar
-; r13: résultat
+; Brief:
+;    lit sur l'entrée standard un nombre 
+; Arguments:
+;   aucun
+; retourne:
+;   un int
+
+; Registres utilisés
+; r12: flag si le nombre entré est négatif
+; r13: stocke le résultat temporaire
+; rax: valeurs de retour de 'getchar' et de 'getint'
+
 getint:
     ; conventions d'appels AMD64 
     push    rbp             ; sauvegarde le pointeur de base
@@ -17,30 +25,41 @@ getint:
     mov     r12, 0          ; Initialise les flags
     
     cmp     rax, '-'
-    jne     convert         ; rax n'est pas '-', c'est donc un nombre. On passe directement à la conversion 
+    jne     check           ; rax n'est pas '-', c'est donc un nombre. On passe directement à la conversion 
     mov     r12, 1          ; r12 possède le flag 'nombre negatif' 
 
-loop_label:
-    call    getchar        ; récupère le prochain character
+get_next_char:
+    call    getchar         ; récupère le prochain character dans rax
 
+check:
     ; On vérifie si le charactère est un chiffre/la saisie est terminée
+
     cmp     rax, 0
-    je      final          ; stack[rcx] == '\0'
+    je      final          ; rax == '\0'
     cmp     rax, '0'       ; 
-    jl      final          ; stack[rcx] < '0'
+    jl      final          ; rax < '0'
     cmp     rax, '9'       ; 
-    jg      final          ; stack[rcx] > '9'
+    jg      final          ; rax > '9'
 
-convert:
+convert: 
+    ; Conversion du 'char' rax en int et ajout au résultat
 
-    ; On ajoute rax dans le résultat 
     imul    r13, 10        ; r13 *= 10
     sub     rax, '0'       ; rax = int(rax)
     add     r13, rax       ; r13 += rax
-    jmp     loop_label
+    jmp     get_next_char
 
 final:
+    ; Prépare la sortie de fonction
+
     mov     rax, r13       ; on met le résultat dans le registre de retour
+
+    cmp     r12, 1         ; on regarde si le flag 'neg' sur r12 est renseigné
+    jne     quit           ; pas négatif, on quitte normalement
+    neg     rax            ; c'est négatif, on lui applique la fonction 'neg'
+
+quit:
+    ; Détermine quelle sortie appeler en cas d'erreur et de sortie correcte
 
     mov     rsp, rbp       ; restore stack
     pop     rbp
@@ -50,6 +69,8 @@ final:
     ret
 
 exit_failure:
+    ; Sortie en cas d'erreur
+
     mov     rax, 60        ; rax = 60
     mov     rdi, 5         ; rdi = 5
     syscall

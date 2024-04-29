@@ -15,7 +15,13 @@ putint:
     mov     rbx, 10         ; diviseur
     mov     r12, 0
 
-loop:
+    cmp     rax, 0
+    jge     loop_label      ; si l'entier à afficher est plus grand que 0, on l'affiche directement
+    
+    mov     rdi, '-'
+    call    putchar
+
+loop_label:
     cmp     rax, 0
     je      print
 
@@ -29,7 +35,7 @@ loop:
 
     inc     r12
 
-    jmp     loop
+    jmp     loop_label
 
 print:
 

@@ -4,7 +4,9 @@ int getint();
 void putint(int);
 
 int main() {
-    putint(getint());
+    int a = getint();
+    putchar('\n');
+    putint(a);
     putchar('\n');
     return 0;
 }
