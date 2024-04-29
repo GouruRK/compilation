@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
         if (!fatal_error()) {
             check_sem(&globals, &functions, AST);
             // TODO: uncomment this when generating nasm
-            // gen_nasm(args.ouput, &globals, &functions, AST);
+            gen_nasm(args.ouput, &globals, &functions, AST);
         }
 
         free_collection(&functions);

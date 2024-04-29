@@ -4,6 +4,6 @@
 #include "tree.h"
 #include "table.h"
 
-void gen_nasm(char* output, Table* globals, FunctionCollection* collection, Node* tree);
+void gen_nasm(char* output, const Table* globals, const FunctionCollection* collection, const Node* tree);
 
 #endif
