@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "types.h"
+
 // colors
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
@@ -66,7 +68,7 @@ void already_declared_error(const char* symbol, int line, int col, int last_line
  * @param col column where the error is triggered
  */
 void wrong_rtype_error(ErrorType type, const char* symbol,
-                       const char* current_type, const char* expected_type,
+                       t_type current_type, t_type expected_type,
                        int line, int col);
 
 /**
@@ -98,16 +100,16 @@ void unused_symbol(const char* symbol, int line, int col);
  */
 void unused_symbol_in_function(const char* function, const char* symbol, int line, int col);
 
-void assignation_error(ErrorType type, const char* symbol, const char* dest_type, const char* source_type, int line, int col);
+void assignation_error(ErrorType type, const char* symbol, t_type dest_type, t_type source_type, int line, int col);
 void redefinition_of_builtin_functions(const char* function, int line, int col);
-void incorrect_array_access(const char* name, const char* access_type, int line, int col);
-void invalid_operation(const char* operation, const char* type, int line, int col);
-void invalid_condition(const char* type, int line, int col);
+void incorrect_array_access(const char* name, t_type access_type, int line, int col);
+void invalid_operation(const char* operation, t_type type, int line, int col);
+void invalid_condition(t_type type, int line, int col);
 void incorrect_function_call(const char* function, int line, int col);
 void invalid_parameter_type(ErrorType type, const char* function,
-                            const char* param_name, const char* expected,
-                            const char* current, int line, int col);
-void incorrect_symbol_use(const char* symbol, const char* sym_type, const char* other_type, int line, int col);
+                            const char* param_name, t_type expected,
+                            t_type current, int line, int col);
+void incorrect_symbol_use(const char* symbol, t_type sym_type, t_type other_type, int line, int col);
 void error(ErrorType type, const char* message);
 
 /**

@@ -5,13 +5,14 @@
 #include <stdio.h>
 
 #include "errors.h"
+#include "types.h"
 
 #define NB_BUILTIN 4
 
 typedef struct {
     char* name;
-    Types r_type;
-    Types param;
+    t_type r_type;
+    t_type param;
 } builtin;
 
 static const builtin builtin_funcs[NB_BUILTIN] = {
@@ -30,7 +31,7 @@ int total_bytes = 0;
  * @param node declaration node
  * @return size in bytes
  */
-static int compute_size(Types type, Node* node);
+static int compute_size(t_type type, Node* node);
 
 /**
  * @brief Create an entry strucutre that gives intels about a variable
@@ -39,7 +40,7 @@ static int compute_size(Types type, Node* node);
  * @param node node contains the variable name
  * @return created entry
  */
-static Entry init_entry(Types type, Node* node, int last_address);
+static Entry init_entry(t_type type, Node* node, int last_address);
 
 /**
  * @brief Allocate more memory for a table
@@ -114,7 +115,7 @@ static int insert_function(FunctionCollection* collection, Function fun);
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_var(Table* table, Types type, Node* node, Table* parameters);
+static int decl_var(Table* table, t_type type, Node* node, Table* parameters);
 
 /**
  * @brief Initialise a collection of variables of differents types
@@ -132,7 +133,7 @@ static int decl_vars(Table* table, Node* node, Table* parameters);
  * @param ident type identifiant
  * @return type
  */
-static Types get_type(char ident[IDENT_LEN]);
+static t_type get_type(char ident[IDENT_LEN]);
 
 /**
  * @brief Initialise a collection of variables of differents types
@@ -179,23 +180,22 @@ int compare_ident_fun(const void* ident, const void* fun) {
     return strcmp((char*)ident, ((Function*)fun)->name);
 }
 
-static int compute_size(Types type, Node* node) {
+static int compute_size(t_type type, Node* node) {
     int size = 8;               // size of int and char is 8 bytes 
     int additionnal = 1;
-    if (node->array && node->firstChild) {
+    if (is_array(node->type) && node->firstChild) {
         additionnal = node->firstChild->val.num;
     }
     return size*additionnal;
 }
 
-static Entry init_entry(Types type, Node* node, int last_address) {
+static Entry init_entry(t_type type, Node* node, int last_address) {
     Entry entry;
-    entry.array = node->array;
     entry.decl_line = node->lineno;
     entry.decl_col = node->colno;
     entry.is_used = false;
     entry.size = compute_size(type, node);
-    entry.type = type;
+    entry.type = set_type(type, node->type);
     strcpy(entry.name, node->val.ident);
 
     if (last_address < 0) {
@@ -254,7 +254,7 @@ static int init_param_list(Table* table, Node* node) {
         return 1;
     }
     
-    Types type = get_type(node->val.ident);
+    t_type type = get_type(node->val.ident);
     if (!insert_entry(table, init_entry(type, node->firstChild, -1))) {
         return 0;
     }
@@ -322,7 +322,7 @@ static int insert_function(FunctionCollection* collection, Function fun) {
     return 1;
 }
 
-static int decl_var(Table* table, Types type, Node* node, Table* parameters) {
+static int decl_var(Table* table, t_type type, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
@@ -342,7 +342,7 @@ static int decl_var(Table* table, Types type, Node* node, Table* parameters) {
     return decl_var(table, type, node->nextSibling, parameters);
 }
 
-static Types get_type(char ident[IDENT_LEN]) {
+static t_type get_type(char ident[IDENT_LEN]) {
     if (!strcmp("int", ident)) return T_INT;
     return T_CHAR; 
 }
@@ -351,7 +351,7 @@ static int decl_vars(Table* table, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
-    Types type = get_type(node->val.ident);
+    t_type type = get_type(node->val.ident);
     if (!decl_var(table, type, node->firstChild, parameters)) {
         return 0;
     }
@@ -395,7 +395,6 @@ static int create_builtin_function(Function* fun, builtin spe) {
     }
     if (spe.param != T_VOID) {
         Entry entry = (Entry){.address = -1,
-                              .array = false,
                               .decl_col = -1,
                               .decl_line = -1,
                               .is_used = true,
@@ -585,14 +584,14 @@ void print_table(Table table) {
                 table.array[i].decl_line, 
                 table.array[i].size,
                 table.array[i].address,
-                table.array[i].array ? "true": "false",
+                is_array(table.array[i].type) ? "true": "false",
                 table.array[i].name);
         } else {
             printf("type: %4s | decl_line: %3d | size: %5d | array: %s | name: %s\n",
                 table.array[i].type == T_INT ? "int": "char",
                 table.array[i].decl_line, 
                 table.array[i].size,
-                table.array[i].array ? "true": "false",
+                is_array(table.array[i].type) ? "true": "false",
                 table.array[i].name);
         }
 
@@ -604,7 +603,7 @@ void print_collection(FunctionCollection collection) {
         if (collection.funcs[i].decl_line == -1) {
             continue; // do not print builtin functions
         }
-        Types type = collection.funcs[i].r_type;
+        t_type type = collection.funcs[i].r_type;
         putchar('\n'); 
         printf("%s %s() - Parameters:\n",
                 type == T_INT ? "int" : (type == T_CHAR ? "char": "void"),

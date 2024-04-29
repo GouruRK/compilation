@@ -54,7 +54,6 @@ Node *makeNode(label_t label) {
     node->firstChild = node->nextSibling = NULL;
     node->lineno = lineno;
     node->colno = colno;
-    node->array = false;
     node->type = T_NONE;
     return node;
 }
@@ -70,19 +69,12 @@ Node *makeNodeWithValue(Value val, label_t label) {
     node->firstChild = node->nextSibling = NULL;
     node->lineno = lineno;
     node->colno = colno;
-    node->array = false;
-    if (label == Num) {
-        node->type = T_INT;
-    } else if (label == Character) {
-        node->type = T_CHAR;
-    } else {
-        node->type = T_NONE;
-    }
+    node->type = T_NONE;
     return node;
 }
 
 void setAsArray(Node* node) {
-    node->array = true;
+    node->type = T_ARRAY;
 }
 
 void addSibling(Node *node, Node *sibling) {
@@ -137,7 +129,7 @@ static void printNode(Node* node) {
             printf("%s", StringFromLabel[node->label]);
             break;
     }
-    if (node->array) {
+    if (is_array(node->type)) {
         puts("[]");
     } else {
         putchar('\n');

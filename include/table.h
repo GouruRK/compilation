@@ -2,18 +2,19 @@
 #define TABLE_H
 
 #include <stdbool.h>
+
 #include "tree.h"
+#include "types.h"
 
 #define DEFAULT_LENGTH 10
 
 typedef struct {            // variable
-    bool array;             // if variable is an array
     bool is_used;           // if used
     int address;            // address
     int decl_line;          // declaration line
     int decl_col;           // declaration column
     int size;               // size in bytes
-    Types type;             // type of variable
+    t_type type;            // type of variable
     char name[IDENT_LEN];   // variable name
 } Entry;
 
@@ -29,7 +30,7 @@ typedef struct {            // symbol table for functions
     bool is_used;           // if the function is used
     int decl_line;          // declaration line
     int decl_col;           // declaration column
-    Types r_type;           // returned type
+    t_type r_type;          // returned type
     char name[IDENT_LEN];   // function name
     Table parameters;       // parameters
     Table locals;           // locals

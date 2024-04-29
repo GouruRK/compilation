@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "types.h"
+
 #define IDENT_LEN 64
 
 typedef enum {
@@ -41,10 +43,6 @@ typedef enum {
     Assignation
 } label_t;
 
-typedef enum {
-    T_INT, T_CHAR, T_VOID, T_ARRAY, T_FUNCTION, T_NONE
-} Types;
-
 typedef union {
     int num;
     char c;
@@ -52,11 +50,10 @@ typedef union {
 } Value;
 
 typedef struct Node {
-    bool array;
     int colno;
     int lineno;
     label_t label;
-    Types type;
+    t_type type;
     Value val;
     struct Node *firstChild, *nextSibling;
 } Node;

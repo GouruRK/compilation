@@ -1,10 +1,11 @@
 char array[50];
 
-int add(int a[], int size) {
-    int i, res;
+int add(int a[]) {
+    int i, res, size;
 
     res = 0;
     i = 0;
+    size = 50;
     while (i < size) {
         res = res + a[i];
     }
@@ -12,5 +13,5 @@ int add(int a[], int size) {
 }
 
 int main(void) {
-    return add(array, 50);
+    return add(array);
 }

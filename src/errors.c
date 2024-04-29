@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "types.h"
+
 bool init = false;
 char filename[64];
 
@@ -17,6 +19,17 @@ static int error_count[] = {
     [WARNING] = 0,
     [NOTE] = 0,
     [ERROR] = 0
+};
+
+static const char* type_convert[] = {
+    [T_NONE]           = "none",
+    [T_CHAR]           = "char",
+    [T_INT]            = "int",
+    [T_VOID]           = "void",
+    [T_ARRAY]          = "array",
+    [T_ARRAY | T_CHAR] = "array[char]",
+    [T_ARRAY | T_INT]  = "array[int]",
+    [T_FUNCTION]       = "function",
 };
 
 void init_error(const char* source) {
@@ -57,15 +70,15 @@ void already_declared_error(const char* symbol, int line, int col,
     print_error(&err);
 }
 
-void wrong_rtype_error(ErrorType type, const char* symbol, const char* current_type,
-                       const char* expected_type, int line, int col) {
+void wrong_rtype_error(ErrorType type, const char* symbol, t_type current_type,
+                       t_type expected_type, int line, int col) {
     Error err = (Error){.type = type,
                         .line = line,
                         .col  = col,
                         .has_line = true};
     snprintf(err.message, ERROR_LEN,
              "'%s' return type must be '%s' instead of '%s'",
-             symbol, expected_type, current_type);
+             symbol, type_convert[expected_type], type_convert[current_type]);
     
     print_error(&err);
 }
@@ -104,8 +117,8 @@ void unused_symbol_in_function(const char* function, const char* symbol,
     print_error(&err);
 }
 
-void assignation_error(ErrorType type, const char* symbol, const char* dest_type,
-                       const char* source_type, int line, int col) {
+void assignation_error(ErrorType type, const char* symbol, t_type dest_type,
+                       t_type source_type, int line, int col) {
     Error err = (Error){.type = type,
                         .line = line,
                         .col = col,
@@ -113,7 +126,7 @@ void assignation_error(ErrorType type, const char* symbol, const char* dest_type
                         };
     snprintf(err.message, ERROR_LEN,
              "trying to assign to '%s' of type '%s' a value of type '%s'",
-             symbol, dest_type, source_type);
+             symbol, type_convert[dest_type], type_convert[source_type]);
     print_error(&err);
 }
 
@@ -129,7 +142,7 @@ void redefinition_of_builtin_functions(const char* function, int line,
     print_error(&err);
 }
 
-void incorrect_array_access(const char* name, const char* access_type, int line,
+void incorrect_array_access(const char* name, t_type access_type, int line,
                             int col) {
     Error err = (Error){.type = ERROR,
                         .line = line,
@@ -138,11 +151,11 @@ void incorrect_array_access(const char* name, const char* access_type, int line,
                         };
     snprintf(err.message, ERROR_LEN,
              "trying to access array '%s' with an expression of type '%s'",
-             name, access_type);
+             name, type_convert[access_type]);
     print_error(&err);
 }
 
-void invalid_operation(const char* operation, const char* type, int line,
+void invalid_operation(const char* operation, t_type type, int line,
                        int col) {
     Error err = (Error){.type = ERROR,
                         .line = line,
@@ -151,18 +164,19 @@ void invalid_operation(const char* operation, const char* type, int line,
                         };
     snprintf(err.message, ERROR_LEN,
              "invalid operation '%s' on type '%s'",
-             operation, type);
+             operation, type_convert[type]);
     print_error(&err);
 }
 
-void invalid_condition(const char* type, int line, int col) {
+void invalid_condition(t_type type, int line, int col) {
     Error err = (Error){.type = ERROR,
                         .line = line,
                         .col = col,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
-             "invalid type for condition: expected 'int', got '%s'", type);
+             "invalid type for condition: expected 'int', got '%s'",
+             type_convert[type]);
     print_error(&err);
 }
 
@@ -178,8 +192,8 @@ void incorrect_function_call(const char* function, int line, int col) {
 }
 
 void invalid_parameter_type(ErrorType type, const char* function,
-                            const char* param_name, const char* expected,
-                            const char* current, int line, int col) {
+                            const char* param_name, t_type expected,
+                            t_type current, int line, int col) {
     Error err = (Error){.type = type,
                         .line = line,
                         .col = col,
@@ -187,12 +201,13 @@ void invalid_parameter_type(ErrorType type, const char* function,
                         };
     snprintf(err.message, ERROR_LEN,
              "incorrect parameter '%s' type while trying to call '%s': expected type"
-             " '%s', got '%s'", param_name, function, expected, current);
+             " '%s', got '%s'", param_name, function, type_convert[expected],
+             type_convert[current]);
     print_error(&err);
 }
 
-void incorrect_symbol_use(const char* symbol, const char* sym_type,
-                          const char* other_type, int line, int col) {
+void incorrect_symbol_use(const char* symbol, t_type sym_type,
+                          t_type other_type, int line, int col) {
     Error err = (Error){.type = ERROR,
                         .line = line,
                         .col = col,
@@ -200,7 +215,7 @@ void incorrect_symbol_use(const char* symbol, const char* sym_type,
                         };
     snprintf(err.message, ERROR_LEN,
              "entry %s of type %s is not typed %s",
-             symbol, sym_type, other_type);
+             symbol, type_convert[sym_type], type_convert[other_type]);
     print_error(&err);
 }
 

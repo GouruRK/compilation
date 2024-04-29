@@ -6,15 +6,7 @@
 
 #include "table.h"
 #include "errors.h"
-
-static const char* type_convert[] = {
-    [T_CHAR] = "char",
-    [T_INT] = "int",
-    [T_VOID] = "void",
-    [T_ARRAY] = "array",
-    [T_FUNCTION] = "function",
-    [T_NONE] = "none"
-};
+#include "types.h"
 
 /**
  * @brief Sort a table of entries using the lexicographic order
@@ -166,8 +158,8 @@ static int check_main(const FunctionCollection* collection) {
         return 0;
     }
     if (start_fun->r_type != T_INT) {
-        wrong_rtype_error(ERROR, "main", type_convert[start_fun->r_type],
-                          type_convert[T_INT], start_fun->decl_line,
+        wrong_rtype_error(ERROR, "main", start_fun->r_type,
+                          T_INT, start_fun->decl_line,
                           start_fun->decl_col);
         return 0;
     }
@@ -206,21 +198,21 @@ static int check_assignation_types(const Table* globals, const FunctionCollectio
     if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
     if (!check_instruction(globals, collection, fun, SECONDCHILD(tree))) return 0;
 
-    Types t_dest = FIRSTCHILD(tree)->type;
-    Types t_value = SECONDCHILD(tree)->type;
+    t_type t_dest = FIRSTCHILD(tree)->type;
+    t_type t_value = SECONDCHILD(tree)->type;
     if (t_dest == T_CHAR && t_value == T_INT) { // warning when casting char to int
         assignation_error(WARNING,
                           FIRSTCHILD(tree)->val.ident,
-                          type_convert[tree->firstChild->type],
-                          type_convert[SECONDCHILD(tree)->type],
+                          tree->firstChild->type,
+                          SECONDCHILD(tree)->type,
                           tree->lineno, tree->colno);
         return 1; // when its a warning we continue
     } else if (t_dest != t_value) {
         if (t_dest != T_INT && t_value != T_CHAR) {
             assignation_error(ERROR,
                               FIRSTCHILD(tree)->val.ident,
-                              type_convert[tree->firstChild->type],
-                              type_convert[SECONDCHILD(tree)->type],
+                              tree->firstChild->type,
+                              SECONDCHILD(tree)->type,
                               tree->lineno, tree->colno);
             return 0;
         }
@@ -230,7 +222,7 @@ static int check_assignation_types(const Table* globals, const FunctionCollectio
 
 static int check_return_type(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
-    Types child_type;
+    t_type child_type;
     if (tree->firstChild) {
         if (!check_instruction(globals, collection, fun, tree->firstChild)) return 0;
         child_type = tree->firstChild->type;
@@ -240,13 +232,13 @@ static int check_return_type(const Table* globals, const FunctionCollection* col
 
     if (fun->r_type != child_type) {
         if (fun->r_type == T_CHAR && child_type == T_INT) {
-            wrong_rtype_error(WARNING, fun->name, type_convert[child_type],
-                            type_convert[fun->r_type], tree->lineno,
+            wrong_rtype_error(WARNING, fun->name, child_type,
+                            fun->r_type, tree->lineno,
                             tree->colno);
             return 1; // when its a warning we continue
         } else if (!(fun->r_type == T_INT && child_type == T_CHAR)) {
-            wrong_rtype_error(ERROR, fun->name, type_convert[child_type],
-                            type_convert[fun->r_type], tree->lineno,
+            wrong_rtype_error(ERROR, fun->name, child_type,
+                            fun->r_type, tree->lineno,
                             tree->colno);
             return 0;
         }
@@ -262,21 +254,42 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
     for (i = 0; head != NULL && i < called->parameters.cur_len; i++) {
         if (!check_instruction(globals, collection, fun, head)) return 0;
         entry = called->parameters.array[i];
-        Types entry_type = entry.array ? T_ARRAY: entry.type;
-        if (head->type != entry_type) {
-            if (entry_type == T_INT && head->type == T_CHAR) {
-                head = head->nextSibling;
-                continue;
+
+        // one of them is an array
+        if (is_array(head->type) || is_array(entry.type)) {
+            // if one of them is not an array
+            if (!(is_array(entry.type) && is_array(head->type))) {
+                invalid_parameter_type(ERROR, called->name, entry.name,
+                                       entry.type,
+                                       head->type,
+                                       head->lineno, head->colno);
+                return 0;
             }
-            ErrorType type = ERROR;
-            if (head->type == T_INT && entry_type == T_CHAR) {
-                type = WARNING; // when its a warning we continue
+            // both are arrays but from different types
+            if ((is_int(head->type) && is_char(entry.type))
+                || (is_char(head->type) && is_int(entry.type))) {
+                invalid_parameter_type(ERROR, called->name, entry.name,
+                                       entry.type,
+                                       head->type,
+                                       head->lineno, head->colno);
+                return 0;
             }
-            invalid_parameter_type(type, called->name, entry.name,
-                                   type_convert[entry_type],
-                                   type_convert[head->type],
-                                   head->lineno, head->colno);
-            return type == WARNING; // when its a warning we continue
+        } else {
+            if (head->type != entry.type) {
+                if (is_int(entry.type) && is_char(head->type)) {
+                    head = head->nextSibling;
+                    continue;
+                }
+                ErrorType err_type = ERROR;
+                if (is_char(entry.type) && is_int(head->type)) {
+                    err_type = WARNING;
+                }
+                invalid_parameter_type(err_type, called->name, entry.name,
+                                       entry.type,
+                                       head->type,
+                                       head->lineno, head->colno);
+                return 0;
+            }
         }
         head = head->nextSibling;
     }
@@ -287,69 +300,99 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
     return 1;
 }
 
+static int check_entry_use(const Table* globals, const FunctionCollection* collection,
+                           const Function* fun, Node* tree, const Entry* entry) {
+    if (FIRSTCHILD(tree)) {
+        // either entry is an array and user tries to access it
+        // or the user think its a function which entry is not
+
+        // eliminate cases where is a function
+        if (FIRSTCHILD(tree)->label == NoParametres || FIRSTCHILD(tree)->label == ListExp) {
+            incorrect_symbol_use(entry->name, entry->type,
+                                 T_FUNCTION, tree->lineno, tree->colno);
+            return 0;
+        }
+
+        // if its an array
+        if (is_array(entry->type)) {
+            // check if the sub-expression is an integer to access the array
+            if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
+
+            if (FIRSTCHILD(tree)->type != T_INT && FIRSTCHILD(tree)->type != T_CHAR) {
+                incorrect_array_access(entry->name,
+                                       FIRSTCHILD(tree)->type,
+                                       tree->lineno,
+                                       tree->colno);
+                return 0;
+            }
+            // else the access is valid and the node type is the array type
+            tree->type = T_INT;
+            if (is_char(entry->type)) {
+                tree->type = T_CHAR;
+            }
+            return 1;
+        } else {
+            // an non-array entry should not be used as so
+            incorrect_symbol_use(entry->name, entry->type,
+                                 T_ARRAY, tree->lineno, tree->colno);
+        }
+    }
+    // if its not a function the user tried to call or an array he tried to access
+    // its the variable itself
+    tree->type = entry->type;
+    return 1;
+}
+
+static int check_function_use(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree, const Function* function) {
+    // check first if we tried to call the function
+    if (!FIRSTCHILD(tree)) { // function's name is used as a variable
+        incorrect_symbol_use(function->name, T_FUNCTION,
+                             T_ARRAY, tree->lineno, tree->colno);
+        return 0;
+    }
+
+    // else the user tries to call it
+    // check if there are parameters
+    if (FIRSTCHILD(tree)->label == NoParametres) {  // if no parameters are given
+        if (function->parameters.cur_len) {         // if the function requires parameters 
+            incorrect_function_call(function->name, tree->lineno, tree->colno);
+            return 0;
+        }
+    } else if (FIRSTCHILD(tree)->label == ListExp) {
+        if (!check_parameters(globals, collection, fun, function, FIRSTCHILD(FIRSTCHILD(tree))))
+            return 0;
+    } else {
+        // the user tries to access the function as an array
+        incorrect_symbol_use(function->name, T_FUNCTION,
+                             T_ARRAY, tree->lineno, tree->colno);
+        return 0;
+    }
+    // the function can be called
+    // the type value of the node is the return value of the function
+    tree->type = function->r_type;
+    return 1;
+}
+
 static int ident_type(const Table* globals, const FunctionCollection* collection,
                         const Function* fun, Node* tree) {
     Entry* entry = find_entry(globals, fun, tree->val.ident);
-    if (entry) { // ident is a variable
-        if (entry->array) {
-            if (FIRSTCHILD(tree)) { // trying to access the array
-                if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
-                if (FIRSTCHILD(tree)->type == T_INT || FIRSTCHILD(tree)->type == T_CHAR) {
-                    tree->type = entry->type;
-                } else { //incorrect type to access
-                    incorrect_array_access(entry->name,
-                                           type_convert[FIRSTCHILD(tree)->type],
-                                           tree->lineno,
-                                           tree->colno);
-                    return 0;
-                }
-            } else {
-                tree->type = T_ARRAY;
-            }
-        } else if (FIRSTCHILD(tree)) {
-            if (FIRSTCHILD(tree)->label == NoParametres) {
-                incorrect_symbol_use(entry->name, type_convert[entry->type],
-                                     type_convert[T_FUNCTION], tree->lineno, tree->colno);
-            }
-            incorrect_symbol_use(entry->name, type_convert[entry->type],
-                                type_convert[T_ARRAY], tree->lineno, tree->colno);
-            return 0;
-        } else {
-            tree->type = entry->type;
-        }
-    } else { // ident is a function
-        Function* function = get_function(collection, tree->val.ident);
-        if (FIRSTCHILD(tree)) {
-            if (FIRSTCHILD(tree)->label == NoParametres) {
-                if (function->parameters.cur_len) {
-                    incorrect_function_call(function->name, tree->lineno, tree->colno);
-                    return 0;
-                }
-                tree->type = function->r_type;
-            } else if (FIRSTCHILD(tree)->label == ListExp) {
-                if (!check_parameters(globals, collection, fun, function, FIRSTCHILD(FIRSTCHILD(tree)))) return 0;
-                tree->type = function->r_type;
-            } else {
-                incorrect_symbol_use(function->name, type_convert[T_FUNCTION],
-                                type_convert[T_ARRAY], tree->lineno, tree->colno);
-                return 0;
-            }
-        } else {
-            tree->type = T_FUNCTION;
-        }
+    if (entry) {
+        return check_entry_use(globals, collection, fun, tree, entry);
     }
-    return 1;
+    Function* function = get_function(collection, tree->val.ident);
+    return check_function_use(globals, collection, fun, tree, function);
 }
 
 static int check_arithm_type(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
     if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
     if (!check_instruction(globals, collection, fun, SECONDCHILD(tree))) return 0;
-    Types ltype = FIRSTCHILD(tree)->type;
+    t_type ltype = FIRSTCHILD(tree)->type;
     if (tree->label == AddSub) {
         if (!(SECONDCHILD(tree))) { // unary plus or minus
             if (ltype != T_INT && ltype != T_CHAR) {
-                invalid_operation(tree->val.ident, type_convert[ltype],
+                invalid_operation(tree->val.ident, ltype,
                                   tree->lineno, tree->colno);
                 return 0;
             }
@@ -358,20 +401,20 @@ static int check_arithm_type(const Table* globals, const FunctionCollection* col
         }
     } else if (tree->label == Negation) {
         if (ltype != T_INT && ltype != T_CHAR) {
-                invalid_operation(tree->val.ident, type_convert[ltype],
+                invalid_operation(tree->val.ident, ltype,
                                   tree->lineno, tree->colno);
                 return 0;
             }
             tree->type = ltype;
             return 1;
     }
-    Types rtype = SECONDCHILD(tree)->type;
+    t_type rtype = SECONDCHILD(tree)->type;
     if (ltype != T_INT && ltype != T_CHAR) {
-        invalid_operation(tree->val.ident, type_convert[ltype],
+        invalid_operation(tree->val.ident, ltype,
                             tree->lineno, tree->colno);
         return 0;
     } else if (rtype != T_INT && rtype != T_CHAR) {
-        invalid_operation(tree->val.ident, type_convert[rtype],
+        invalid_operation(tree->val.ident, rtype,
                             tree->lineno, tree->colno);
         return 0;
     }
@@ -383,7 +426,7 @@ static int check_cond_type(const Table* globals, const FunctionCollection* colle
                             const Function* fun, Node* tree) {
     if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
     if (FIRSTCHILD(tree)->type != T_INT && FIRSTCHILD(tree)->type != T_CHAR) {
-        invalid_condition(type_convert[FIRSTCHILD(tree)->type], tree->lineno,
+        invalid_condition(FIRSTCHILD(tree)->type, tree->lineno,
                           tree->colno);
         return 0;
     }
@@ -397,8 +440,8 @@ static int check_instruction(const Table* globals, const FunctionCollection* col
     int err = 1;
     switch (tree->label) {
         case Assignation: err = check_assignation_types(globals, collection, fun, tree); break;
-        case Character: tree->type = T_CHAR; break;
-        case Num: tree->type = T_INT; break;
+        case Character: tree->type = set_type(tree->type, T_CHAR); break;
+        case Num: tree->type = set_type(tree->type, T_INT); break;
         case Ident: err = ident_type(globals, collection, fun, tree); break;
         case Return: err = check_return_type(globals, collection, fun, tree); return err; // return here so we dont parse code after the return
         case Eq: case Order:
