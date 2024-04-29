@@ -65,8 +65,8 @@ static void search_unused_symbols(const Table* globals,
  * @param tree head node of the assignation (with the 'Assignation' label)
  */
 static int check_assignation_types(const Table* globals,
-                                    const FunctionCollection* collection,
-                                    const Function* fun, Node* tree);
+                                   const FunctionCollection* collection,
+                                   const Function* fun, Node* tree);
 
 /**
  * @brief Check if the return type is the correct, according to function
@@ -78,7 +78,7 @@ static int check_assignation_types(const Table* globals,
  * @param tree head node of the return (with the 'Return' label)
  */
 static int check_return_type(const Table* globals, const FunctionCollection* collection,
-                              const Function* fun, Node* tree);
+                             const Function* fun, Node* tree);
 
 /**
  * @brief Check if the parameters to a function are correct, in terms of 
@@ -91,7 +91,33 @@ static int check_return_type(const Table* globals, const FunctionCollection* col
  * @param tree node of parameters
  */
 static int check_parameters(const Table* globals, const FunctionCollection* collection,
-                             const Function* fun, const Function* called, Node* tree);
+                            const Function* fun, const Function* called, Node* tree);
+
+/**
+ * @brief Check if a functions is correctly used
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the function is used 
+ * @param tree node
+ * @param function used function 
+ * @return
+ */
+static int check_function_use(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree, const Function* function);
+
+/**
+ * @brief Check if an entry is correctly used
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the function is used 
+ * @param tree node
+ * @param entry entry to check
+ * @return
+ */
+static int check_entry_use(const Table* globals, const FunctionCollection* collection,
+                           const Function* fun, Node* tree, const Entry* entry);
 
 /**
  * @brief Get the type of an identifier. For functions, it is their return type
@@ -103,13 +129,13 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
  * @return
  */
 static int ident_type(const Table* globals, const FunctionCollection* collection,
-                        const Function* fun, Node* tree);
+                      const Function* fun, Node* tree);
 
 static int check_arithm_type(const Table* globals, const FunctionCollection* collection,
-                              const Function* fun, Node* tree);
+                             const Function* fun, Node* tree);
 
 static int check_cond_type(const Table* globals, const FunctionCollection* collection,
-                            const Function* fun, Node* tree);
+                           const Function* fun, Node* tree);
 
 /**
  * @brief Check if instructions are correcly typed
@@ -120,7 +146,7 @@ static int check_cond_type(const Table* globals, const FunctionCollection* colle
  * @param tree head node of the instruction
  */
 static int check_instruction(const Table* globals, const FunctionCollection* collection,
-                              const Function* fun, Node* tree);
+                             const Function* fun, Node* tree);
 
 /**
  * @brief Main function for checking types
@@ -129,7 +155,8 @@ static int check_instruction(const Table* globals, const FunctionCollection* col
  * @param collection collection of functions
  * @param tree head node of the programm (the 'Prog' label)
  */
-static int check_types(const Table* globals, const FunctionCollection* collection, Node* tree);
+static int check_types(const Table* globals, const FunctionCollection* collection,
+                       Node* tree);
 
 static void sort_table(Table* table) {
     qsort(table->array, table->cur_len, sizeof(Entry), compare_entries);
@@ -184,7 +211,8 @@ static void search_unused_symbol_table(const Table* table, const char* source) {
     }
 }
 
-static void search_unused_symbols(const Table* globals, const FunctionCollection* collection) {
+static void search_unused_symbols(const Table* globals,
+                                  const FunctionCollection* collection) {
     search_unused_symbol_table(globals, NULL);
     for (int i = 0; i < collection->cur_len; i++) {
         Function fun = collection->funcs[i];
@@ -260,18 +288,16 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
             // if one of them is not an array
             if (!(is_array(entry.type) && is_array(head->type))) {
                 invalid_parameter_type(ERROR, called->name, entry.name,
-                                       entry.type,
-                                       head->type,
-                                       head->lineno, head->colno);
+                                       entry.type, head->type, head->lineno,
+                                       head->colno);
                 return 0;
             }
             // both are arrays but from different types
             if ((is_int(head->type) && is_char(entry.type))
                 || (is_char(head->type) && is_int(entry.type))) {
                 invalid_parameter_type(ERROR, called->name, entry.name,
-                                       entry.type,
-                                       head->type,
-                                       head->lineno, head->colno);
+                                       entry.type, head->type, head->lineno,
+                                       head->colno);
                 return 0;
             }
         } else {
@@ -285,10 +311,9 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
                     err_type = WARNING;
                 }
                 invalid_parameter_type(err_type, called->name, entry.name,
-                                       entry.type,
-                                       head->type,
-                                       head->lineno, head->colno);
-                return 0;
+                                       entry.type, head->type, head->lineno,
+                                       head->colno);
+                return err_type == WARNING;
             }
         }
         head = head->nextSibling;
@@ -319,10 +344,8 @@ static int check_entry_use(const Table* globals, const FunctionCollection* colle
             if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
 
             if (FIRSTCHILD(tree)->type != T_INT && FIRSTCHILD(tree)->type != T_CHAR) {
-                incorrect_array_access(entry->name,
-                                       FIRSTCHILD(tree)->type,
-                                       tree->lineno,
-                                       tree->colno);
+                incorrect_array_access(entry->name, FIRSTCHILD(tree)->type,
+                                       tree->lineno, tree->colno);
                 return 0;
             }
             // else the access is valid and the node type is the array type
@@ -333,8 +356,8 @@ static int check_entry_use(const Table* globals, const FunctionCollection* colle
             return 1;
         } else {
             // an non-array entry should not be used as so
-            incorrect_symbol_use(entry->name, entry->type,
-                                 T_ARRAY, tree->lineno, tree->colno);
+            incorrect_symbol_use(entry->name, entry->type, T_ARRAY,
+                                 tree->lineno, tree->colno);
         }
     }
     // if its not a function the user tried to call or an array he tried to access
@@ -347,8 +370,8 @@ static int check_function_use(const Table* globals, const FunctionCollection* co
                               const Function* fun, Node* tree, const Function* function) {
     // check first if we tried to call the function
     if (!FIRSTCHILD(tree)) { // function's name is used as a variable
-        incorrect_symbol_use(function->name, T_FUNCTION,
-                             T_ARRAY, tree->lineno, tree->colno);
+        incorrect_symbol_use(function->name, T_FUNCTION, T_ARRAY, tree->lineno,
+                             tree->colno);
         return 0;
     }
 
@@ -375,7 +398,7 @@ static int check_function_use(const Table* globals, const FunctionCollection* co
 }
 
 static int ident_type(const Table* globals, const FunctionCollection* collection,
-                        const Function* fun, Node* tree) {
+                      const Function* fun, Node* tree) {
     Entry* entry = find_entry(globals, fun, tree->val.ident);
     if (entry) {
         return check_entry_use(globals, collection, fun, tree, entry);
