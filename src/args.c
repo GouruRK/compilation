@@ -9,8 +9,8 @@ Args init_args(void) {
                   .tree = false,
                   .err = false,
                   .symbols = false,
-                  .source = NULL, 
-                  .ouput = NULL};
+                  .source = NULL,
+                  .name = NULL};
 }
 
 Args parse_args(int argc, char* argv[]) {
@@ -20,7 +20,6 @@ Args parse_args(int argc, char* argv[]) {
         {"help",    no_argument,       0, 'h'},
         {"tree",    no_argument,       0, 't'},
         {"symtabs", no_argument,       0, 's'},
-        {"output",  required_argument, 0, 'o'},
         {0, 0, 0, 0}
     };
     while ((opt = getopt_long(argc, argv, "htso:", long_options, &opt_index)) != -1) {
@@ -33,9 +32,6 @@ Args parse_args(int argc, char* argv[]) {
                 break;
             case 's':
                 args.symbols = true;
-                break;
-            case 'o':
-                args.ouput = optarg;
                 break;
             case '?':
                 fprintf(stderr, "Unknown option : %c\n", optopt);

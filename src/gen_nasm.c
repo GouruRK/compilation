@@ -1,6 +1,7 @@
 #include "gen_nasm.h"
 
 #include <stdio.h>
+#include <string.h>
 
 static FILE* out;
 
@@ -33,14 +34,16 @@ static void write_init(int globals_size) {
 }
 
 static void write_exit(void) {
-    fprintf(out, "pop rdi\n" //! change this when implementing function calls
+    fprintf(out, "\npop rdi\n" //! change this when implementing function calls
                  "mov rax, 60\n"
                  "syscall\n\n");
 }
 
 static int create_file(char* output) {
     if (!output) {
-        output = "_anonymous.asm";
+        output = "_anonymous";
+    } else {
+        output[strlen(output) - 4] = '\0';
     }
     char filename[64];
     snprintf(filename, 64, "obj/%s.asm", output);
@@ -116,8 +119,8 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
         case Num: fprintf(out, "\tpush %d\n", tree->val.num); return;
         case Character: fprintf(out, "\tpush '%c'\n", tree->val.c); return;
         case DivStar:
-        case AddSub: write_arithmetic(globals, collection, fun, tree); break;
-        case Return: write_return(globals, collection, fun, tree); break;
+        case AddSub: write_arithmetic(globals, collection, fun, tree); return;
+        case Return: write_return(globals, collection, fun, tree); return;
         default: break;
     }
     write_tree(globals, collection, fun, tree->nextSibling);

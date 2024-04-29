@@ -23,20 +23,19 @@ void print_help(void) {
            );
 }
 
-int parse(Args* args, Node** AST, bool print_tree) {
+int parse(Args args, Node** AST, bool print_tree) {
     int res;
-    if (!args->source) {
+    if (!args.source) {
         res = parse_file(stdin, AST);
-        args->name = "stdin";
     } else {
-        res = parse_file(args->source, AST);
+        res = parse_file(args.source, AST);
     }
     
     if (!res && print_tree) {
         printTree(*AST);
     }
-    if (args->source) {
-        fclose(args->source);
+    if (args.source) {
+        fclose(args.source);
     }
     return res;
 }
@@ -53,10 +52,10 @@ int main(int argc, char* argv[]) {
 
     Node* AST = NULL;
 
-    int res = parse(&args, &AST, args.tree);
+    int res = parse(args, &AST, args.tree);
 
     if (res == 0) {
-        init_error(args.name);
+        init_error(args.name ? args.name: "stdin");
         int err_globals, err_functions;
         Table globals;
         FunctionCollection functions;
@@ -75,7 +74,7 @@ int main(int argc, char* argv[]) {
         if (!fatal_error()) {
             check_sem(&globals, &functions, AST);
             // TODO: uncomment this when generating nasm
-            gen_nasm(args.ouput, &globals, &functions, AST);
+            gen_nasm(args.name, &globals, &functions, AST);
         }
 
         free_collection(&functions);

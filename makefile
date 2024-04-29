@@ -20,7 +20,7 @@ BUILTIN_OBJ=$(patsubst $(BUILTIN_DIR)/%.asm, $(BUILD_DIR)/%.o, $(BUILTIN))
 
 TARGET=$(wildcard $(BUILD_DIR)/*.asm)
 TARGET_OBJ=$(patsubst $(BUILD_DIR)/%.asm, $(BUILD_DIR)/%.o, $(TARGET))
-TARGET_NAME=$(patsubst $(BUILD_DIR)/%.asm, $(BIN_DIR)/%, $(TARGET))
+TARGET_NAME=$(basename $(patsubst $(BUILD_DIR)/%.asm, $(BIN_DIR)/%.o, $(TARGET)))
 
 $(BIN_DIR)/$(EXEC): obj/$(LEXER).o obj/$(PARSER).o $(SRC_OBJS)
 	@mkdir $(BIN_DIR) --parent
@@ -40,6 +40,7 @@ $(BUILD_DIR)/$(PARSER).c $(BUILD_DIR)/$(PARSER).h: $(SRC_DIR)/$(PARSER).y
 	bison -d -o $(BUILD_DIR)/$(PARSER).c $<
 
 asm: $(TARGET_OBJ) $(BUILTIN_OBJ)
+	@echo $(TARGET_NAME)
 	$(CC) -o $(TARGET_NAME) $^ -nostartfiles -no-pie
 
 $(BUILD_DIR)/%.o: $(BUILTIN_DIR)/%.asm
