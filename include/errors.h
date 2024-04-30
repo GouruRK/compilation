@@ -110,6 +110,9 @@ void invalid_parameter_type(ErrorType type, const char* function,
                             const char* param_name, t_type expected,
                             t_type current, int line, int col);
 void incorrect_symbol_use(const char* symbol, t_type sym_type, t_type other_type, int line, int col);
+
+void incorrect_array_decl(const char* symbol, int line, int col);
+
 void error(ErrorType type, const char* message);
 
 /**

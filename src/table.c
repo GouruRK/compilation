@@ -40,7 +40,7 @@ static int compute_size(t_type type, Node* node);
  * @param node node contains the variable name
  * @return created entry
  */
-static Entry init_entry(t_type type, Node* node, int last_address);
+static int init_entry(Entry* entry, t_type type, Node* node, int last_address);
 
 /**
  * @brief Allocate more memory for a table
@@ -189,22 +189,27 @@ static int compute_size(t_type type, Node* node) {
     return size*additionnal;
 }
 
-static Entry init_entry(t_type type, Node* node, int last_address) {
-    Entry entry;
-    entry.decl_line = node->lineno;
-    entry.decl_col = node->colno;
-    entry.is_used = false;
-    entry.size = compute_size(type, node);
-    entry.type = set_type(type, node->type);
-    strcpy(entry.name, node->val.ident);
+static int init_entry(Entry* entry, t_type type, Node* node, int last_address) {
+    entry->decl_line = node->lineno;
+    entry->decl_col = node->colno;
+    entry->is_used = false;
+    entry->type = set_type(type, node->type);
+    strcpy(entry->name, node->val.ident);
+
+    entry->size = compute_size(type, node);
+    if (!entry->size) {
+        incorrect_array_decl(entry->name, node->lineno, node->colno);
+        return 0;
+    }
+    
 
     if (last_address < 0) {
-        entry.address = -1;
+        entry->address = -1;
     } else {
-        entry.address = total_bytes;
-        total_bytes += entry.size;
+        entry->address = total_bytes;
+        total_bytes += entry->size;
     }
-    return entry;
+    return 1;
 }
 
 static int realloc_table(Table* table) {
@@ -255,7 +260,11 @@ static int init_param_list(Table* table, Node* node) {
     }
     
     t_type type = get_type(node->val.ident);
-    if (!insert_entry(table, init_entry(type, node->firstChild, -1))) {
+    Entry entry;
+    if (!init_entry(&entry, type, FIRSTCHILD(node), -1)) {
+        return 0;
+    }
+    if (!insert_entry(table, entry)) {
         return 0;
     }
     init_param_list(table, node->nextSibling);
@@ -327,9 +336,12 @@ static int decl_var(Table* table, t_type type, Node* node, Table* parameters) {
         return 1;
     }
 
-    Entry entry = init_entry(type, node, total_bytes);
+    Entry entry;
     int index;
-
+    if (!init_entry(&entry, type, node, total_bytes)) {
+        return 0;
+    }
+    
     if (parameters && (index = is_in_table(parameters, entry.name)) != -1) {
         already_declared_error(entry.name, entry.decl_line,
                        entry.decl_col, parameters->array[index].decl_line);
