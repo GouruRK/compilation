@@ -29,14 +29,16 @@ static void write_init(int globals_size) {
                  "\tglobals: resb %d\n"
                  "\nsection .text\n"
                  "\nglobal _start\n\n"
-                 "\n_start:\n", 
+                 "\n_start:\n"
+                 "\tcall main\n", 
                  globals_size);
+    write_exit();
 }
 
 static void write_exit(void) {
-    fprintf(out, "\npop rdi\n" //! change this when implementing function calls
-                 "mov rax, 60\n"
-                 "syscall\n\n");
+    fprintf(out, "\tmov rdi, rax\n"
+                 "\tmov rax, 60\n"
+                 "\tsyscall\n");
 }
 
 static int create_file(char* output) {
@@ -64,16 +66,19 @@ static void write_add_sub_mul(const Table* globals, const FunctionCollection* co
 
     if (!SECONDCHILD(tree)) { // unary plus and minus
         if (tree->val.ident[0] == '-') {
-            fprintf(out, "\tpop rcx\n"
-                         "\tneg rcx\n"
-                         "\tpush rcx\n");
+            fprintf(out, "\n\t; negation unaire\n"
+                         "\tpop rax\n"
+                         "\tneg rax\n"
+                         "\tpush rax\n");
         }
     } else {
         write_tree(globals, collection, fun, SECONDCHILD(tree));
-        fprintf(out, "\tpop rcx\n"
+        fprintf(out, "\n\t; opération binaire (%c)\n"
+                     "\tpop rcx\n"
                      "\tpop rax\n"
                      "\t%s rax, rcx\n"
                      "\tpush rax\n",
+                     tree->val.ident[0],
                      sym_op[(int)tree->val.ident[0]]);
     }
 
@@ -83,17 +88,19 @@ static void write_div_mod(const Table* globals, const FunctionCollection* collec
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     if(tree->val.ident[0] == '/') {
-        fprintf(out, "\tmov rdx, 0\n"
-                 "\tpop rcx\n"
-                 "\tpop rax\n"
-                 "\tidiv rcx\n"
-                 "\tpush rax\n");
+        fprintf(out, "\n\t; division\n"
+                     "\tmov rdx, 0\n"
+                     "\tpop rcx\n"
+                     "\tpop rax\n"
+                     "\tidiv rcx\n"
+                     "\tpush rax\n");
     } else if(tree->val.ident[0] == '%') {
-        fprintf(out, "\tpop rcx\n"
-                 "\tpop rax\n"
-                 "\tmov rdx, 0\n"
-                 "\tidiv rcx\n"
-                 "\tpush rdx\n");
+        fprintf(out, "\n\t; modulo\n"
+                     "\tpop rcx\n"
+                     "\tpop rax\n"
+                     "\tmov rdx, 0\n"
+                     "\tidiv rcx\n"
+                     "\tpush rdx\n");
     }
 }
 
@@ -107,9 +114,28 @@ static void write_arithmetic(const Table* globals, const FunctionCollection* col
 }
 
 static void write_return(const Table* globals, const FunctionCollection* collection,
-                             const Function* fun, const Node* tree) {
-    write_tree(globals, collection, fun, FIRSTCHILD(tree));
-    // TODO: write 'ret'
+                         const Function* fun, const Node* tree) {
+    if (fun->r_type != T_VOID) {
+        write_tree(globals, collection, fun, FIRSTCHILD(tree));
+        fprintf(out, "\n\t; chargement de la valeur de retour\n" 
+                     "\tpop rax\n");
+    }
+    
+
+    fprintf(out, "\n\t; retablissement de la pile avant retour\n"
+                "\tmov rsp, rbp\n"
+                 "\tpop rbp\n"
+                 "\tret\n");
+}
+
+static void write_function(Function* fun) {
+    fprintf(out, "\n; fonction %s\n"
+                 "%s:\n"
+                 "\t; sauvegarde du retour de pile\n"
+                 "\tpush rbp\n"
+                 "\tmov rbp, rsp\n\n"
+                 "\t; corps de la fonction\n",
+                 fun->name, fun->name);
 }
 
 static void write_tree(const Table* globals, const FunctionCollection* collection,
@@ -133,6 +159,7 @@ static void write_functions(const Table* globals, const FunctionCollection* coll
     for (; decl_fonct_node != NULL;) {
         fun = get_function(collection,
             decl_fonct_node->firstChild->firstChild->nextSibling->val.ident);
+        write_function(fun);
         write_tree(globals, collection, fun, FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node))));
         decl_fonct_node = decl_fonct_node->nextSibling;
     }
@@ -146,6 +173,5 @@ void gen_nasm(char* output, const Table* globals, const FunctionCollection* coll
 
     write_functions(globals, collection, tree);
 
-    write_exit();
     fclose(out);
 }
