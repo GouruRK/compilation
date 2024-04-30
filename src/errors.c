@@ -235,6 +235,15 @@ void error(ErrorType type, const char* message) {
     print_error(&err);
 }
 
+void line_error(ErrorType type, const char* message, int line, int col) {
+    Error err = (Error){.type = type,
+                        .line = line,
+                        .col = col,
+                        .has_line = true};
+    strcpy(err.message, message);
+    print_error(&err);
+}
+
 bool fatal_error(void) {
     return error_count[ERROR];
 }

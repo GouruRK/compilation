@@ -22,8 +22,6 @@ static const builtin builtin_funcs[NB_BUILTIN] = {
     {.name = "putchar", .r_type = T_VOID, .param = T_CHAR}
 };
 
-int total_bytes = 0;
-
 /**
  * @brief Compute size of variable in bytes based on its type
  * 
@@ -40,7 +38,7 @@ static int compute_size(t_type type, Node* node);
  * @param node node contains the variable name
  * @return created entry
  */
-static int init_entry(Entry* entry, t_type type, Node* node, int last_address);
+static int init_entry(Entry* entry, t_type type, Node* node);
 
 /**
  * @brief Allocate more memory for a table
@@ -59,7 +57,7 @@ static int realloc_table(Table* table);
  * @return 1 if success
  *         0 if error due to memory error
  */
-static int insert_entry(Table* table, Entry entry);
+static int insert_entry(Table* table, Entry entry, bool update_adress);
 
 /**
  * @brief Assign to the given function its return type
@@ -189,7 +187,7 @@ static int compute_size(t_type type, Node* node) {
     return size*additionnal;
 }
 
-static int init_entry(Entry* entry, t_type type, Node* node, int last_address) {
+static int init_entry(Entry* entry, t_type type, Node* node) {
     entry->decl_line = node->lineno;
     entry->decl_col = node->colno;
     entry->is_used = false;
@@ -201,14 +199,9 @@ static int init_entry(Entry* entry, t_type type, Node* node, int last_address) {
         incorrect_array_decl(entry->name, node->lineno, node->colno);
         return 0;
     }
-    
 
-    if (last_address < 0) {
-        entry->address = -1;
-    } else {
-        entry->address = total_bytes;
-        total_bytes += entry->size;
-    }
+    // address will be known when inserting the entry in a table
+    entry->address = -1;
     return 1;
 }
 
@@ -225,7 +218,7 @@ static int realloc_table(Table* table) {
     return 1;
 }
 
-static int insert_entry(Table* table, Entry entry) {
+static int insert_entry(Table* table, Entry entry, bool update_adress) {
     if (!table) return 0;
     int index;
     if ((index = is_in_table(table, entry.name)) != -1) {
@@ -236,6 +229,10 @@ static int insert_entry(Table* table, Entry entry) {
 
     if (table->cur_len == table->max_len) {
         if (!realloc_table(table)) return 0;
+    }
+
+    if (update_adress) {
+        entry.address = table->total_bytes;
     }
 
     table->array[table->cur_len] = entry;
@@ -261,10 +258,10 @@ static int init_param_list(Table* table, Node* node) {
     
     t_type type = get_type(node->val.ident);
     Entry entry;
-    if (!init_entry(&entry, type, FIRSTCHILD(node), -1)) {
+    if (!init_entry(&entry, type, FIRSTCHILD(node))) {
         return 0;
     }
-    if (!insert_entry(table, entry)) {
+    if (!insert_entry(table, entry, false)) {
         return 0;
     }
     init_param_list(table, node->nextSibling);
@@ -338,7 +335,7 @@ static int decl_var(Table* table, t_type type, Node* node, Table* parameters) {
 
     Entry entry;
     int index;
-    if (!init_entry(&entry, type, node, total_bytes)) {
+    if (!init_entry(&entry, type, node)) {
         return 0;
     }
     
@@ -348,7 +345,7 @@ static int decl_var(Table* table, t_type type, Node* node, Table* parameters) {
         return 1;
     }
 
-    if (!insert_entry(table, entry)) {
+    if (!insert_entry(table, entry, true)) {
         return 0;
     }
     return decl_var(table, type, node->nextSibling, parameters);
@@ -413,7 +410,7 @@ static int create_builtin_function(Function* fun, builtin spe) {
                               .name = "arg",
                               .size = 8,
                               .type = spe.param};
-        if (!insert_entry(&fun->parameters, entry)) {
+        if (!insert_entry(&fun->parameters, entry, false)) {
             free_table(&fun->parameters);
             return 0;
         }

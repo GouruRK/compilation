@@ -133,15 +133,67 @@ static void write_function(Function* fun) {
                  "%s:\n"
                  "\t; sauvegarde du retour de pile\n"
                  "\tpush rbp\n"
-                 "\tmov rbp, rsp\n\n"
+                 "\tmov rbp, rsp\n"
+                 "\n\t; réservation de mémoire pour les variables locales\n"
+                 "\tsub rsp, %d\n\n"
                  "\t; corps de la fonction\n",
-                 fun->name, fun->name);
+                 fun->name, fun->name, fun->locals.total_bytes);
+}
+
+static void write_assign(const Table* globals, const FunctionCollection* collection,
+                         const Function* fun, const Node* tree) {
+    
+    //! Uncomment this when arrays evaluation is done
+    // write_tree(globals, collection, fun, FIRSTCHILD(tree));
+    write_tree(globals, collection, fun, SECONDCHILD(tree));
+    
+    Entry* entry;
+    char* src;
+
+    if ((entry = get_entry(&fun->locals, FIRSTCHILD(tree)->val.ident))) {
+        src = "pop qword [rbp";
+    } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
+        // TODO: handle parameter access
+    } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
+        src = "mov rcx, globals\n\tpop qword [rcx";
+    }
+
+    fprintf(out,
+    "\n\t; assignation\n"
+    "\t%s + %d]\n",
+    src,
+    entry->address);
+}
+
+static void write_load_ident(const Table* globals, const FunctionCollection* collection,
+                             const Function* fun, const Node* tree) {
+    Entry* entry;
+    if ((entry = get_entry(&fun->locals, tree->val.ident))) {
+        fprintf(out, "\n\t; load local value store in %s\n"
+                     "\tpush qword [rbp + %d]\n",
+                     entry->name, entry->address);
+    } else if ((entry = get_entry(&fun->parameters, tree->val.ident))) {
+        // TODO: handle parameter access
+    } else if ((entry = get_entry(globals, tree->val.ident))) {
+        fprintf(out, "\n\t; load global value store in %s\n"
+                     "\tmov rcx, globals\n"
+                     "\tpush qword [rcx + %d]\n",
+                     entry->name, entry->address);
+    } else {
+        // TODO: function call
+    }
 }
 
 static void write_tree(const Table* globals, const FunctionCollection* collection,
                        const Function* fun, const Node* tree) {
     if (!tree) return;
+    
+    //* return when its an expression
+    //* break when its an instruction
+
     switch (tree->label) {
+        case Assignation: write_assign(globals, collection, fun, tree); break;
+        case Ident: write_load_ident(globals, collection, fun, tree); return;
         case Num: fprintf(out, "\tpush %d\n", tree->val.num); return;
         case Character: fprintf(out, "\tpush '%c'\n", tree->val.c); return;
         case DivStar:

@@ -114,6 +114,7 @@ void incorrect_symbol_use(const char* symbol, t_type sym_type, t_type other_type
 void incorrect_array_decl(const char* symbol, int line, int col);
 
 void error(ErrorType type, const char* message);
+void line_error(ErrorType type, const char* message, int line, int col);
 
 /**
  * @brief Check if any errors has been registered

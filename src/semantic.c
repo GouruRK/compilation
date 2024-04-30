@@ -226,6 +226,7 @@ static int check_assignation_types(const Table* globals, const FunctionCollectio
     if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
     if (!check_instruction(globals, collection, fun, SECONDCHILD(tree))) return 0;
 
+
     t_type t_dest = FIRSTCHILD(tree)->type;
     t_type t_value = SECONDCHILD(tree)->type;
     if (t_dest == T_CHAR && t_value == T_INT) { // warning when casting char to int
@@ -236,7 +237,10 @@ static int check_assignation_types(const Table* globals, const FunctionCollectio
                           tree->lineno, tree->colno);
         return 1; // when its a warning we continue
     } else if (t_dest != t_value) {
-        if (t_dest != T_INT && t_value != T_CHAR) {
+        if ((t_dest != T_INT && t_value != T_CHAR) 
+            || is_array(t_dest)
+            || is_array(t_value)
+            || t_value == T_VOID) {
             assignation_error(ERROR,
                               FIRSTCHILD(tree)->val.ident,
                               tree->firstChild->type,
@@ -252,6 +256,10 @@ static int check_return_type(const Table* globals, const FunctionCollection* col
                               const Function* fun, Node* tree) {
     t_type child_type;
     if (tree->firstChild) {
+        if (fun->r_type == T_VOID) {
+            line_error(ERROR, "void expression not allowed in return", tree->lineno, tree->colno);
+            return 0;
+        }
         if (!check_instruction(globals, collection, fun, tree->firstChild)) return 0;
         child_type = tree->firstChild->type;
     } else {

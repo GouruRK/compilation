@@ -40,7 +40,6 @@ $(BUILD_DIR)/$(PARSER).c $(BUILD_DIR)/$(PARSER).h: $(SRC_DIR)/$(PARSER).y
 	bison -d -o $(BUILD_DIR)/$(PARSER).c $<
 
 asm: $(TARGET_OBJ) $(BUILTIN_OBJ)
-	@echo $(TARGET_NAME)
 	$(CC) -o $(TARGET_NAME) $^ -nostartfiles -no-pie
 
 $(BUILD_DIR)/%.o: $(BUILTIN_DIR)/%.asm
