@@ -520,35 +520,36 @@ static int check_cond_type(const Table* globals, const FunctionCollection* colle
 // tree is the first instruction of the function
 static int check_instruction(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
-    if (!tree) return 1;
-    int err = 1;
+    if (!tree) return 1;    
     switch (tree->label) {
-        case Assignation: err = check_assignation_types(globals, collection, fun, tree); break;
-        case Character: tree->type = set_type(tree->type, T_CHAR); break;
-        case Num: tree->type = set_type(tree->type, T_INT); break;
-        case Ident: err = ident_type(globals, collection, fun, tree); break;
-        case Return: err = check_return_type(globals, collection, fun, tree); return err; // return here so we dont parse code after the return
+        case Assignation: return check_assignation_types(globals, collection, fun, tree);
+        case Character: tree->type = set_type(tree->type, T_CHAR); return 1;
+        case Num: tree->type = set_type(tree->type, T_INT); return 1;
+        case Ident: return ident_type(globals, collection, fun, tree);
+        case Return: return check_return_type(globals, collection, fun, tree);
         case Eq: case Order:
         case Or: case And: case Negation:
-        case DivStar: case AddSub: err = check_arithm_type(globals, collection, fun, tree); break;
-        case If: case While: err = check_cond_type(globals, collection, fun, tree); break;
-        default: break;
+        case DivStar: case AddSub: return check_arithm_type(globals, collection, fun, tree);
+        case If: case While: return check_cond_type(globals, collection, fun, tree);
+        default: return 1;
     }
-    if (!err) {
-        return err;
-    }
-    return check_instruction(globals, collection, fun, tree->nextSibling);
 }
 
 static int check_types(const Table* globals, const FunctionCollection* collection, Node* tree) {
-    Node* decl_fonct_node = FIRSTCHILD(SECONDCHILD(tree));
+    Node* decl_fonct_node = FIRSTCHILD(SECONDCHILD(tree)), *head_instr;
     Function* fun;
 
-    for (; decl_fonct_node != NULL;) {
+    for (; decl_fonct_node;) {
         fun = get_function(collection,
-            decl_fonct_node->firstChild->firstChild->nextSibling->val.ident);
-        if (!check_instruction(globals, collection, fun, FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node))))) {
-            return 0;
+            SECONDCHILD(FIRSTCHILD(decl_fonct_node))->val.ident);
+
+        head_instr = FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node)));
+
+        for (; head_instr;) {
+            if (!check_instruction(globals, collection, fun, head_instr)) {
+                return 0;
+            }
+            head_instr = head_instr->nextSibling;
         }
         decl_fonct_node = decl_fonct_node->nextSibling;
     }
