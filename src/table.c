@@ -9,12 +9,13 @@
 
 #define NB_BUILTIN 4
 
-typedef struct {
-    char* name;
-    t_type r_type;
-    t_type param;
+typedef struct {        // structure for builtin function
+    char* name;         // function name
+    t_type r_type;      // return type
+    t_type param;       // parameter type
 } builtin;
 
+// array of builtin
 static const builtin builtin_funcs[NB_BUILTIN] = {
     {.name = "getint",  .r_type = T_INT,  .param = T_VOID},
     {.name = "putint",  .r_type = T_VOID, .param = T_INT},
@@ -181,8 +182,8 @@ int compare_ident_fun(const void* ident, const void* fun) {
 static int compute_size(t_type type, Node* node) {
     int size = 8;               // size of int and char is 8 bytes 
     int additionnal = 1;
-    if (is_array(node->type) && node->firstChild) {
-        additionnal = node->firstChild->val.num;
+    if (is_array(node->type) && FIRSTCHILD(node)) {
+        additionnal = FIRSTCHILD(node)->val.num;
     }
     return size*additionnal;
 }
@@ -222,9 +223,9 @@ static int insert_entry(Table* table, Entry entry, bool update_adress) {
     if (!table) return 0;
     int index;
     if ((index = is_in_table(table, entry.name)) != -1) {
-        already_declared_error(entry.name, entry.decl_line,
-                       entry.decl_col, table->array[index].decl_col);
-        return 1;
+        already_declared_error(entry.name, entry.decl_line, entry.decl_col,
+                               table->array[index].decl_col);
+        return 0;
     }
 
     if (table->cur_len == table->max_len) {
@@ -278,7 +279,8 @@ static int init_function(Function* fun, Node* node, Table* globals) {
     int index;
     if ((index = is_in_table(globals, fun->name)) != -1) {  
         already_declared_error(fun->name, fun->decl_line, fun->decl_col,
-                                   globals->array[index].decl_line);
+                               globals->array[index].decl_line);
+        return 0;
     }
 
     if (!init_table(&fun->parameters)) {
@@ -313,8 +315,8 @@ static int insert_function(FunctionCollection* collection, Function fun) {
     int index;
     if ((index = is_in_collection(collection, fun.name)) != -1) {
         already_declared_error(fun.name, fun.decl_line, fun.decl_col,
-                                   collection->funcs[index].decl_line);
-        return 1; // return 1 to continue
+                               collection->funcs[index].decl_line);
+        return 0;
     }
 
     if (collection->cur_len == collection->max_len) {
@@ -340,9 +342,9 @@ static int decl_var(Table* table, t_type type, Node* node, Table* parameters) {
     }
     
     if (parameters && (index = is_in_table(parameters, entry.name)) != -1) {
-        already_declared_error(entry.name, entry.decl_line,
-                       entry.decl_col, parameters->array[index].decl_line);
-        return 1;
+        already_declared_error(entry.name, entry.decl_line, entry.decl_col,
+                               parameters->array[index].decl_line);
+        return 0;
     }
 
     if (!insert_entry(table, entry, true)) {
@@ -361,14 +363,14 @@ static int decl_vars(Table* table, Node* node, Table* parameters) {
         return 1;
     }
     t_type type = get_type(node->val.ident);
-    if (!decl_var(table, type, node->firstChild, parameters)) {
+    if (!decl_var(table, type, FIRSTCHILD(node), parameters)) {
         return 0;
     }
     return decl_vars(table, node->nextSibling, parameters);
 }
 
-static void check_used(Table* globals, Function* fun, FunctionCollection* coll, Node* node) {
-    if (!node) return;
+static int check_used(Table* globals, Function* fun, FunctionCollection* coll, Node* node) {
+    if (!node) return 1;
 
     if (node->label == Ident) {
         Entry* entry = find_entry(globals, fun, node->val.ident);
@@ -376,7 +378,7 @@ static void check_used(Table* globals, Function* fun, FunctionCollection* coll, 
             Function* f = get_function(coll, node->val.ident);
             if (!f) {
                 use_of_undeclare_symbol(node->val.ident, node->lineno, node->colno);
-                return;
+                return 0;
             } else {
                 if (f->decl_line != node->lineno) {
                     f->is_used = true;
@@ -388,8 +390,8 @@ static void check_used(Table* globals, Function* fun, FunctionCollection* coll, 
             }
         }
     }
-    check_used(globals, fun, coll, node->firstChild);
-    check_used(globals, fun, coll, node->nextSibling);
+    if (!check_used(globals, fun, coll, FIRSTCHILD(node))) return 0;
+    return check_used(globals, fun, coll, node->nextSibling);
 }
 
 static int create_builtin_function(Function* fun, builtin spe) {
@@ -518,8 +520,8 @@ Function* get_function(const FunctionCollection* collection, const char ident[ID
     if (!collection || !collection->cur_len) return NULL;
     
     if (collection->sorted) {
-        return bsearch(ident, collection->funcs, collection->cur_len, sizeof(Function),
-                       compare_ident_fun);
+        return bsearch(ident, collection->funcs, collection->cur_len,
+                       sizeof(Function), compare_ident_fun);
     }
     int index = is_in_collection(collection, ident);
     return index == -1 ? NULL: &(collection->funcs[index]);
@@ -550,22 +552,22 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
     int err;
     if (node->label == DeclVars) {
         if (!is_globals_done) {
-            err = decl_vars(globals, node->firstChild, NULL);
+            err = decl_vars(globals, FIRSTCHILD(node), NULL);
             is_globals_done = true;
         } else {
             err = decl_vars(&(collection->funcs[collection->cur_len - 1].locals),
-                            node->firstChild,
+                            FIRSTCHILD(node),
                             &(collection->funcs[collection->cur_len - 1].parameters));
         }
         if (!err) return 0;
         return create_tables(globals, collection, node->nextSibling);
     } else if (node->label == DeclFonct) {
         Function fun;
-        if (!init_function(&fun, node->firstChild->firstChild, globals)) {
+        if (!init_function(&fun, FIRSTCHILD(FIRSTCHILD(node)), globals)) {
             return 0;
         }
 
-        Node* head_decl_vars = node->firstChild->nextSibling->firstChild->firstChild;
+        Node* head_decl_vars = FIRSTCHILD(FIRSTCHILD(SECONDCHILD(node)));
 
         if (!decl_vars(&fun.locals, head_decl_vars, &fun.parameters)) {
             return 0;
@@ -575,11 +577,13 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
             return 0;
         }
         
-        check_used(globals, &fun, collection, node->firstChild->nextSibling);
+        if (!check_used(globals, &fun, collection, SECONDCHILD(node))) {
+            return 0;
+        }
         
         return create_tables(globals, collection, node->nextSibling);
     }
-    if (!create_tables(globals, collection, node->firstChild)) {
+    if (!create_tables(globals, collection, FIRSTCHILD(node))) {
         return 0;
     }
     return create_tables(globals, collection, node->nextSibling);

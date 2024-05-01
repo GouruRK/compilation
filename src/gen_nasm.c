@@ -158,11 +158,9 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
         src = "mov rcx, globals\n\tpop qword [rcx";
     }
 
-    fprintf(out,
-    "\n\t; assignation\n"
-    "\t%s + %d]\n",
-    src,
-    entry->address);
+    fprintf(out, "\n\t; assignation\n"
+                 "\t%s + %d]\n",
+                 src, entry->address);
 }
 
 static void write_load_ident(const Table* globals, const FunctionCollection* collection,
@@ -210,7 +208,7 @@ static void write_functions(const Table* globals, const FunctionCollection* coll
 
     for (; decl_fonct_node != NULL;) {
         fun = get_function(collection,
-            decl_fonct_node->firstChild->firstChild->nextSibling->val.ident);
+                           SECONDCHILD(FIRSTCHILD(decl_fonct_node))->val.ident);
         write_function(fun);
         write_tree(globals, collection, fun, FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node))));
         decl_fonct_node = decl_fonct_node->nextSibling;

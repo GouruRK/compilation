@@ -35,6 +35,7 @@ static void sort_tables(Table* globals, FunctionCollection* collection);
  *        and its return type
  * 
  * @param collection collection of function
+ * @return 0 in case of error else 1 if success
  */
 static int check_main(const FunctionCollection* collection);
 
@@ -63,6 +64,7 @@ static void search_unused_symbols(const Table* globals,
  * @param collection collection of functions
  * @param fun current function where the assignation is done
  * @param tree head node of the assignation (with the 'Assignation' label)
+ * @return 0 in case of error else 1 if success
  */
 static int check_assignation_types(const Table* globals,
                                    const FunctionCollection* collection,
@@ -76,6 +78,9 @@ static int check_assignation_types(const Table* globals,
  * @param collection collection of functions
  * @param fun current functin where the return is done
  * @param tree head node of the return (with the 'Return' label)
+ *             the 'type' attribute of the node is set according to the function
+ *             prototype or raise an exception
+ * @return 0 in case of error else 1 if success
  */
 static int check_return_type(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, Node* tree);
@@ -88,52 +93,77 @@ static int check_return_type(const Table* globals, const FunctionCollection* col
  * @param collection collection of functions
  * @param fun current function where the other function call is
  * @param called function to be called
- * @param tree node of parameters
+ * @param tree head node of parameters, either with the 'NoParam' label or 
+ *             'ListExp' for a list of parameters
+ * @return 0 in case of error else 1 if success
  */
 static int check_parameters(const Table* globals, const FunctionCollection* collection,
                             const Function* fun, const Function* called, Node* tree);
 
 /**
- * @brief Check if a functions is correctly used
+ * @brief Check if an entry (a variable) is correctly used
  * 
  * @param globals global's table
  * @param collection collection of functions
- * @param fun current function where the function is used 
- * @param tree node
- * @param function used function 
- * @return
- */
-static int check_function_use(const Table* globals, const FunctionCollection* collection,
-                              const Function* fun, Node* tree, const Function* function);
-
-/**
- * @brief Check if an entry is correctly used
- * 
- * @param globals global's table
- * @param collection collection of functions
- * @param fun current function where the function is used 
- * @param tree node
- * @param entry entry to check
- * @return
+ * @param fun current function where this entry is used
+ * @param tree node with the 'Ident' label
+ * @param entry used entry
+ * @return 0 in case of error else 1 if success
  */
 static int check_entry_use(const Table* globals, const FunctionCollection* collection,
                            const Function* fun, Node* tree, const Entry* entry);
 
 /**
- * @brief Get the type of an identifier. For functions, it is their return type
+ * @brief Check if a function is correctly used
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the function is called
+ * @param tree node with the 'Ident' label
+ * @param function function to be called
+ * @return 0 in case of error else 1 if success
+ */
+static int check_function_use(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree, const Function* function);
+
+/**
+ * @brief Get the type of an identifier and if it is correctly used.
+ *        This also applied for function
  * 
  * @param globals global's table
  * @param collection collection of functions
  * @param fun current function 
  * @param ident identifier to look for
- * @return
+ * @param tree node with the 'Ident' label
+ * @return 0 in case of error else 1 if success
  */
 static int ident_type(const Table* globals, const FunctionCollection* collection,
                       const Function* fun, Node* tree);
 
+/**
+ * @brief Check the user correctly perform arithmetics. This verification is
+ *        type-based
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the arithmetic is performed
+ * @param tree head node of the arthmetic. Its label must be one of the
+ *             following: 'Eq', 'Order, 'Or', 'And', 'Negation', 'DivStar'
+ *             or 'AddSub'
+ * @return 0 in case of error else 1 if success
+ */
 static int check_arithm_type(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, Node* tree);
 
+/**
+ * @brief Check types for condition
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun current function where the condition is evaludated
+ * @param tree head node with the 'If' or 'While' label
+ * @return 0 in case of error else 1 if success
+ */
 static int check_cond_type(const Table* globals, const FunctionCollection* collection,
                            const Function* fun, Node* tree);
 
@@ -164,7 +194,8 @@ static void sort_table(Table* table) {
 }
 
 static void sort_collection(FunctionCollection* collection) {
-    qsort(collection->funcs, collection->cur_len, sizeof(Function), compare_functions);
+    qsort(collection->funcs, collection->cur_len, sizeof(Function),
+          compare_functions);
     collection->sorted = true;
 }
 
@@ -177,7 +208,6 @@ static void sort_tables(Table* globals, FunctionCollection* collection) {
     }
 }
 
-
 static int check_main(const FunctionCollection* collection) {
     Function* start_fun = get_function(collection, "main");
     if (!start_fun) {
@@ -185,9 +215,8 @@ static int check_main(const FunctionCollection* collection) {
         return 0;
     }
     if (start_fun->r_type != T_INT) {
-        wrong_rtype_error(ERROR, "main", start_fun->r_type,
-                          T_INT, start_fun->decl_line,
-                          start_fun->decl_col);
+        wrong_rtype_error(ERROR, "main", start_fun->r_type, T_INT,
+                          start_fun->decl_line, start_fun->decl_col);
         return 0;
     }
     if (start_fun->parameters.cur_len) {
@@ -226,24 +255,25 @@ static int check_assignation_types(const Table* globals, const FunctionCollectio
     if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
     if (!check_instruction(globals, collection, fun, SECONDCHILD(tree))) return 0;
 
-
     t_type t_dest = FIRSTCHILD(tree)->type;
     t_type t_value = SECONDCHILD(tree)->type;
-    if (t_dest == T_CHAR && t_value == T_INT) { // warning when casting char to int
+
+    // if we tried to assign an int to a char, display a warning
+    if (t_dest == T_CHAR && t_value == T_INT) {
         assignation_error(WARNING,
                           FIRSTCHILD(tree)->val.ident,
-                          tree->firstChild->type,
+                          FIRSTCHILD(tree)->type,
                           SECONDCHILD(tree)->type,
                           tree->lineno, tree->colno);
         return 1; // when its a warning we continue
-    } else if (t_dest != t_value) {
-        if ((t_dest != T_INT && t_value != T_CHAR) 
-            || is_array(t_dest)
-            || is_array(t_value)
-            || t_value == T_VOID) {
+    } else if (t_dest != t_value) {                     // two types are different
+        if ((t_dest != T_INT && t_value != T_CHAR)      // not a cast char to int
+            || is_array(t_dest)                         // if one of them is either an array 
+            || is_array(t_value)                        //
+            || t_value == T_VOID) {                     // if we tried to assign a void value
             assignation_error(ERROR,
                               FIRSTCHILD(tree)->val.ident,
-                              tree->firstChild->type,
+                              FIRSTCHILD(tree)->type,
                               SECONDCHILD(tree)->type,
                               tree->lineno, tree->colno);
             return 0;
@@ -255,27 +285,37 @@ static int check_assignation_types(const Table* globals, const FunctionCollectio
 static int check_return_type(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
     t_type child_type;
-    if (tree->firstChild) {
+    
+    // if the user is returning a value 
+    if (FIRSTCHILD(tree)) {
+
+        // forbid to return when the return type of the function is void
         if (fun->r_type == T_VOID) {
             line_error(ERROR, "void expression not allowed in return", tree->lineno, tree->colno);
             return 0;
         }
-        if (!check_instruction(globals, collection, fun, tree->firstChild)) return 0;
-        child_type = tree->firstChild->type;
+
+        // check return expression
+        if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
+        
+        // assigning the return type
+        child_type = FIRSTCHILD(tree)->type;
     } else {
+        // If nothing is return then is void by default
         child_type = T_VOID;
     }
 
+    // if the return type of the function and the return value are different
     if (fun->r_type != child_type) {
+        // check if it is a cast from an int to char
         if (fun->r_type == T_CHAR && child_type == T_INT) {
-            wrong_rtype_error(WARNING, fun->name, child_type,
-                            fun->r_type, tree->lineno,
-                            tree->colno);
+            wrong_rtype_error(WARNING, fun->name, child_type, fun->r_type,
+                              tree->lineno, tree->colno);
             return 1; // when its a warning we continue
         } else if (!(fun->r_type == T_INT && child_type == T_CHAR)) {
-            wrong_rtype_error(ERROR, fun->name, child_type,
-                            fun->r_type, tree->lineno,
-                            tree->colno);
+            // if it's not a cast from a char to an int (which is valid)
+            wrong_rtype_error(ERROR, fun->name, child_type, fun->r_type,
+                              tree->lineno, tree->colno);
             return 0;
         }
     }
@@ -287,8 +327,13 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
     Node* head = tree;
     Entry entry;
     int i;
+    
+    // looping over each given parameters and the expected ones
     for (i = 0; head != NULL && i < called->parameters.cur_len; i++) {
+        
+        // if there is an error while checking sub-expression
         if (!check_instruction(globals, collection, fun, head)) return 0;
+        
         entry = called->parameters.array[i];
 
         // one of them is an array
@@ -309,13 +354,17 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
                 return 0;
             }
         } else {
+            // tw different types
             if (head->type != entry.type) {
-                if (is_int(entry.type) && is_char(head->type)) {
+                // implicit cast
+                if (entry.type == T_INT && head->type == T_CHAR) {
                     head = head->nextSibling;
                     continue;
                 }
                 ErrorType err_type = ERROR;
-                if (is_char(entry.type) && is_int(head->type)) {
+                
+                // warning cast from int to char
+                if (entry.type == T_CHAR && head->type == T_INT) {
                     err_type = WARNING;
                 }
                 invalid_parameter_type(err_type, called->name, entry.name,
@@ -326,6 +375,7 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
         }
         head = head->nextSibling;
     }
+    // if there is not enough or too much given parameters
     if (head != NULL || i != called->parameters.cur_len) {
         incorrect_function_call(called->name, tree->lineno, tree->colno);
         return 0;
@@ -419,9 +469,12 @@ static int check_arithm_type(const Table* globals, const FunctionCollection* col
                               const Function* fun, Node* tree) {
     if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
     if (!check_instruction(globals, collection, fun, SECONDCHILD(tree))) return 0;
+    
     t_type ltype = FIRSTCHILD(tree)->type;
     if (tree->label == AddSub) {
-        if (!(SECONDCHILD(tree))) { // unary plus or minus
+        // no second child = unary plus or minus
+        if (!(SECONDCHILD(tree))) {
+            // invalid type for unary opertation
             if (ltype != T_INT && ltype != T_CHAR) {
                 invalid_operation(tree->val.ident, ltype,
                                   tree->lineno, tree->colno);
