@@ -11,14 +11,14 @@ char filename[64];
 
 static char* types[] = {
     [WARNING] = PURPLE "warning" RESET,
-    [NOTE] = CYAN "note" RESET,
-    [ERROR] = RED "error" RESET
+    [NOTE]    = CYAN "note" RESET,
+    [ERROR]   = RED "error" RESET
 };
 
 static int error_count[] = {
     [WARNING] = 0,
-    [NOTE] = 0,
-    [ERROR] = 0
+    [NOTE]    = 0,
+    [ERROR]   = 0
 };
 
 static const char* type_convert[] = {

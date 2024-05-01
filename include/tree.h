@@ -40,7 +40,8 @@ typedef enum {
     LValue,
     Arguments,
     ListExp,
-    Assignation
+    Assignation,
+    EmptyInstr
 } label_t;
 
 typedef union {

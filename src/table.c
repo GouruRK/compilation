@@ -114,7 +114,7 @@ static int insert_function(FunctionCollection* collection, Function fun);
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_var(Table* table, t_type type, Node* node, Table* parameters);
+static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* node, Table* parameters);
 
 /**
  * @brief Initialise a collection of variables of differents types
@@ -124,7 +124,7 @@ static int decl_var(Table* table, t_type type, Node* node, Table* parameters);
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_vars(Table* table, Node* node, Table* parameters);
+static int decl_vars(Table* table, FunctionCollection* coll, Node* node, Table* parameters);
 
 /**
  * @brief Get the type object from its identifiant
@@ -133,16 +133,6 @@ static int decl_vars(Table* table, Node* node, Table* parameters);
  * @return type
  */
 static t_type get_type(char ident[IDENT_LEN]);
-
-/**
- * @brief Initialise a collection of variables of differents types
- * 
- * @param table table to store the variables
- * @param node head node
- * @return 1 if success
- *         0 if fail due to memory error
- */
-static int decl_vars(Table* table, Node* node, Table* parameters);
 
 /**
  * @brief Create a builtin function according to the given specification
@@ -330,7 +320,7 @@ static int insert_function(FunctionCollection* collection, Function fun) {
     return 1;
 }
 
-static int decl_var(Table* table, t_type type, Node* node, Table* parameters) {
+static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
@@ -341,16 +331,24 @@ static int decl_var(Table* table, t_type type, Node* node, Table* parameters) {
         return 0;
     }
     
-    if (parameters && (index = is_in_table(parameters, entry.name)) != -1) {
-        already_declared_error(entry.name, entry.decl_line, entry.decl_col,
-                               parameters->array[index].decl_line);
-        return 0;
+    if (parameters) { // locals
+        if ((index = is_in_table(parameters, entry.name)) != -1) {
+            already_declared_error(entry.name, entry.decl_line, entry.decl_col,
+                                parameters->array[index].decl_line);
+            return 0;
+        }
+    } else { // globals
+        if ((index = is_in_collection(coll, entry.name)) != -1) {
+            redefinition_of_builtin_functions(entry.name, entry.decl_line,
+                                              entry.decl_col);
+            return 0;
+        }
     }
 
     if (!insert_entry(table, entry, true)) {
         return 0;
     }
-    return decl_var(table, type, node->nextSibling, parameters);
+    return decl_var(table, coll, type, node->nextSibling, parameters);
 }
 
 static t_type get_type(char ident[IDENT_LEN]) {
@@ -358,15 +356,15 @@ static t_type get_type(char ident[IDENT_LEN]) {
     return T_CHAR; 
 }
 
-static int decl_vars(Table* table, Node* node, Table* parameters) {
+static int decl_vars(Table* table, FunctionCollection* coll, Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
     t_type type = get_type(node->val.ident);
-    if (!decl_var(table, type, FIRSTCHILD(node), parameters)) {
+    if (!decl_var(table, coll, type, FIRSTCHILD(node), parameters)) {
         return 0;
     }
-    return decl_vars(table, node->nextSibling, parameters);
+    return decl_vars(table, coll, node->nextSibling, parameters);
 }
 
 static int check_used(Table* globals, Function* fun, FunctionCollection* coll, Node* node) {
@@ -552,11 +550,11 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
     int err;
     if (node->label == DeclVars) {
         if (!is_globals_done) {
-            err = decl_vars(globals, FIRSTCHILD(node), NULL);
+            err = decl_vars(globals, collection, FIRSTCHILD(node), NULL);
             is_globals_done = true;
         } else {
             err = decl_vars(&(collection->funcs[collection->cur_len - 1].locals),
-                            FIRSTCHILD(node),
+                            collection, FIRSTCHILD(node),
                             &(collection->funcs[collection->cur_len - 1].parameters));
         }
         if (!err) return 0;
@@ -569,7 +567,7 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
 
         Node* head_decl_vars = FIRSTCHILD(FIRSTCHILD(SECONDCHILD(node)));
 
-        if (!decl_vars(&fun.locals, head_decl_vars, &fun.parameters)) {
+        if (!decl_vars(&fun.locals, collection, head_decl_vars, &fun.parameters)) {
             return 0;
         }
         

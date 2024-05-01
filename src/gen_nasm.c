@@ -5,42 +5,6 @@
 
 static FILE* out;
 
-static const char *StringFromLabel[] = {
-    "if",
-    "else",
-    "while",
-    "return",
-    "type",
-    "void",
-    "and",
-    "or",
-    "eq",
-    "negation",
-    "order",
-    "addsub",
-    "divstar",
-    "character",
-    "num",
-    "ident",
-    "prog",
-    "declVars",
-    "declarateurs",
-    "decl_foncts",
-    "decl_fonct",
-    "en_tete_fonct",
-    "parametres",
-    "NoParametres",
-    "list_typ_var",
-    "corps",
-    "suiteInstr",
-    "instr",
-    "exp",
-    "lvalue",
-    "arguments",
-    "list_exp",
-    "assignation"
-};
-
 static void write_init(int globals_size);
 static void write_exit(void);
 static int create_file(char* output);
@@ -222,19 +186,21 @@ static void write_load_ident(const Table* globals, const FunctionCollection* col
 }
 
 static void write_num(const Node* tree) {
-    fprintf(out, "\t push %d\n", tree->val.num);
+    fprintf(out, "\n\t; lecture d'entier\n"
+                 "\tpush %d\n",
+                 tree->val.num);
 }
 
 static void write_character(const Node* tree) {
-    fprintf(out, "\t push '%c'\n", tree->val.c);
+    fprintf(out, "\n\t; lecture de charactere\n"
+                 "\tpush '%c'\n",
+                 tree->val.c);
 }
 
 static void write_tree(const Table* globals, const FunctionCollection* collection,
                        const Function* fun, const Node* tree) {
     if (!tree) return;
     
-    printf("%s\n", StringFromLabel[tree->label]);
-
     switch (tree->label) {
         case Assignation: write_assign(globals, collection, fun, tree); return;
         case Ident: write_load_ident(globals, collection, fun, tree); return;

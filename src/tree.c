@@ -41,7 +41,8 @@ static const char *StringFromLabel[] = {
     "lvalue",
     "arguments",
     "list_exp",
-    "assignation"
+    "assignation", 
+    "empty_instr"
 };
 
 Node *makeNode(label_t label) {

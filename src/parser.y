@@ -151,7 +151,7 @@ Instr:
                                               addChild($$, $2); }
     |  RETURN ';'                           { $$ = makeNode(Return); }
     |  '{' SuiteInstr '}'                   { $$ = $2; }
-    |  ';'                                  { ; }
+    |  ';'                                  { $$ = makeNode(EmptyInstr); }
     ;
 Exp :  Exp OR TB                            { Node* n = makeNodeWithValue(to_str($2), Or);
                                               addChild(n, $1);
