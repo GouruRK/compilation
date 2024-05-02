@@ -207,7 +207,7 @@ void invalid_parameter_type(ErrorType type, const char* function,
 }
 
 void incorrect_symbol_use(const char* symbol, t_type sym_type,
-                          t_type other_type, int line, int col) {
+                          t_type expected_type, int line, int col) {
     Error err = (Error){.type = ERROR,
                         .line = line,
                         .col = col,
@@ -215,7 +215,7 @@ void incorrect_symbol_use(const char* symbol, t_type sym_type,
                         };
     snprintf(err.message, ERROR_LEN,
              "entry %s of type %s is not typed %s",
-             symbol, type_convert[sym_type], type_convert[other_type]);
+             symbol, type_convert[sym_type], type_convert[expected_type]);
     print_error(&err);
 }
 

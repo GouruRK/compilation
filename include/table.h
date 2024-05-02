@@ -43,7 +43,15 @@ typedef struct {            // array of symbol table for functions
     Function* funcs;        // functions array
 } FunctionCollection;
 
+/**
+ * @brief Function to compare 2 entries based on their names
+ * 
+ * @param entry1
+ * @param entry2 
+ * @return int /0 if equal/ 1 < if entry1 < entry2/ 1 > if entry1 > entry2
+ */
 int compare_entries(const void* entry1, const void* entry2);
+
 int compare_functions(const void* fun1, const void* fun2);
 int compare_ident_entry(const void* ident, const void* entry);
 int compare_ident_fun(const void* ident, const void* fun);

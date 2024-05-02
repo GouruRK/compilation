@@ -1,0 +1,8 @@
+int add(char a[]) {
+    return 0;   
+}
+
+int main(void) {
+    int b[50];
+    return add(b);
+}

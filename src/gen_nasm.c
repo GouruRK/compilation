@@ -3,7 +3,17 @@
 #include <stdio.h>
 #include <string.h>
 
+#define BUFFER_SIZE 512
+
 static FILE* out;
+
+static const char* buitlin_fcts[] = {
+    "../builtin/getchar.asm",
+    "../builtin/getint.asm",
+    "../builtin/putchar.asm",
+    "../builtin/putint.asm",
+    NULL
+};
 
 static void write_init(int globals_size);
 static void write_exit(void);
@@ -23,18 +33,38 @@ static void write_num(const Node* tree);
 static void write_character(const Node* tree);
 
 
+static void write_builtin(FILE* file) {
+    char buffer[BUFFER_SIZE];
+    int count;
+    while ((count = fread(buffer, BUFFER_SIZE, ftell(file), file))) {
+        fwrite(buffer, BUFFER_SIZE, count, out);
+    }
+}
+
+static int write_buitlins(void) {
+    FILE* bfile; 
+    for (int i = 0; buitlin_fcts[i]; i++) {
+        bfile = fopen(buitlin_fcts[i], "r");
+        if (!bfile) {
+            printf("failed to open %s\n", buitlin_fcts[i]);
+            return 0;
+        }
+        write_builtin(bfile);
+        fclose(bfile);
+    }
+    return 1;
+}
+
 static void write_init(int globals_size) {
-    fprintf(out, "extern putchar\n"
-                 "extern getchar\n"
-                 "extern putint\n"
-                 "extern getint\n"
-                 "section .bss\n"
+    fprintf(out, "section .bss\n"
                  "\tglobals: resb %d\n"
-                 "\nsection .text\n"
-                 "\nglobal _start\n\n"
+                 "\nsection .text\n", globals_size);
+
+    write_buitlins();
+
+    fprintf(out, "\nglobal _start\n\n"
                  "\n_start:\n"
-                 "\tcall main\n", 
-                 globals_size);
+                 "\tcall main\n");
     write_exit();
 }
 
@@ -151,19 +181,19 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     
     Entry* entry;
-    char* src;
-
     if ((entry = get_entry(&fun->locals, FIRSTCHILD(tree)->val.ident))) {
-        src = "pop qword [rbp";
+        fprintf(out, "\n\t; assignation\n"
+                     "\tpop qword [rbp - %d]\n",
+                     entry->address);
     } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
         // TODO: handle parameter access
     } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
-        src = "mov rcx, globals\n\tpop qword [rcx";
+        fprintf(out, "\n\t; assignation\n"
+                     "mov rcx, globals\n"
+                     "\tpop qword [rcx + %d]\n",
+                     entry->address);
     }
 
-    fprintf(out, "\n\t; assignation\n"
-                 "\t%s + %d]\n",
-                 src, entry->address);
 }
 
 static void write_load_ident(const Table* globals, const FunctionCollection* collection,
@@ -171,7 +201,7 @@ static void write_load_ident(const Table* globals, const FunctionCollection* col
     Entry* entry;
     if ((entry = get_entry(&fun->locals, tree->val.ident))) {
         fprintf(out, "\n\t; load local value store in %s\n"
-                     "\tpush qword [rbp + %d]\n",
+                     "\tpush qword [rbp - %d]\n",
                      entry->name, entry->address);
     } else if ((entry = get_entry(&fun->parameters, tree->val.ident))) {
         // TODO: handle parameter access

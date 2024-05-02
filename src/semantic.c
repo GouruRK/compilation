@@ -266,7 +266,7 @@ static int check_assignation_types(const Table* globals, const FunctionCollectio
                           SECONDCHILD(tree)->type,
                           tree->lineno, tree->colno);
         return 1; // when its a warning we continue
-    } else if (t_dest != t_value) {                     // two types are different
+    } else if (t_dest != t_value || (is_array(t_dest) && is_array(t_value))) { // two types are different
         if ((t_dest != T_INT && t_value != T_CHAR)      // not a cast char to int
             || is_array(t_dest)                         // if one of them is either an array 
             || is_array(t_value)                        //
@@ -499,7 +499,7 @@ static int check_arithm_type(const Table* globals, const FunctionCollection* col
         return 0;
     } else if (rtype != T_INT && rtype != T_CHAR) {
         invalid_operation(tree->val.ident, rtype,
-                            tree->lineno, tree->colno);
+                          tree->lineno, tree->colno);
         return 0;
     }
     tree->type = T_INT; // all operations are cast to integer
