@@ -15,9 +15,6 @@ ZIP_TARGET=ProjetCompilationL3_ALVES_KIES.zip
 SOURCES=$(wildcard $(SRC_DIR)/*.c)
 SRC_OBJS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
 
-BUILTIN=$(wildcard $(BUILTIN_DIR)/*.asm)
-BUILTIN_OBJ=$(patsubst $(BUILTIN_DIR)/%.asm, $(BUILD_DIR)/%.o, $(BUILTIN))
-
 TARGET=$(wildcard $(BUILD_DIR)/*.asm)
 TARGET_OBJ=$(patsubst $(BUILD_DIR)/%.asm, $(BUILD_DIR)/%.o, $(TARGET))
 TARGET_NAME=$(basename $(patsubst $(BUILD_DIR)/%.asm, $(BIN_DIR)/%.o, $(TARGET)))
@@ -41,9 +38,6 @@ $(BUILD_DIR)/$(PARSER).c $(BUILD_DIR)/$(PARSER).h: $(SRC_DIR)/$(PARSER).y
 
 asm: $(TARGET_OBJ) $(BUILTIN_OBJ)
 	$(CC) -o $(TARGET_NAME) $^ -nostartfiles -no-pie
-
-$(BUILD_DIR)/%.o: $(BUILTIN_DIR)/%.asm
-	nasm -f elf64 -o $@ $< 
 
 $(BUILD_DIR)/%.o: $(BUILD_DIR)/%.asm
 	nasm -f elf64 -o $@ $< 

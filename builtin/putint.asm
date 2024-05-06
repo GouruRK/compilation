@@ -7,44 +7,43 @@ putint:
     push    rbp
     mov     rbp, rsp
 
+    ; On sauvegarde les registres non volatils
+    push    r12
+
+    ; Initialisation des registres
     mov     rax, rdi        ; sauvegarde de l'entier à afficher
     mov     rbx, 10         ; diviseur
     mov     r12, 0
 
     cmp     rax, 0
-    jge     loop_label      ; si l'entier à afficher est plus grand que 0, on l'affiche directement
+    jge     loop_label_pint ; si l'entier à afficher est plus grand que 0, on l'affiche directement
     
     mov     rdi, '-'
     call    putchar
 
-loop_label:
+loop_label_pint:
     cmp     rax, 0
-    je      print
-
+    je      print_pint
     mov     rdx, 0          ; initialise le reste
-
     idiv    rbx             ; rax = rax // rbx, rdx = rax % rbx
-    
     add     rdx, '0'        ; rdx += '0'
-    
     push    rdx
-
     inc     r12
+    jmp     loop_label_pint
 
-    jmp     loop_label
-
-print:
-
+print_pint:
     cmp     r12, 0
-    je      exit
+    je      exit_pint
 
     pop     rdi
     call    putchar
 
     dec     r12
-    jmp     print
+    jmp     print_pint
 
-exit:
+exit_pint:
+    pop     r12
+
     mov     rsp, rbp        ; restore pile
     pop     rbp
     ret

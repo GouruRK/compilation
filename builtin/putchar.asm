@@ -1,18 +1,21 @@
 ; registre d'argument de fonction : rdi
 putchar:
     ; convention d'appel AMD64
-    push rbp
-    mov rbp, rsp
+    push    rbp
+    mov     rbp, rsp
     
-    push rdi        ; on met sur la pile le caractère à afficher
+    ; on met sur la pile le caractère a afficher
+    push rdi
 
-    mov rsi, rsp    ; on met à rsi l'adresse source où est stockée le caractère
-    mov rdx, 1      ; taille de la variable à écrire
-    mov rax, 1      ; choix de la fonction write
+    ; Appel systeme d'affichage
     mov rdi, 1      ; stdout
+    mov rax, 1      ; stdout
+    mov rsi, rsp    ; charactere a afficher
+    mov rdx, 1      ; taille de la variable à écrire
     syscall         ; appel à write
 
-    mov rsp, rbp    ; restauration de la pile
+    ; restauration de la pile
+    mov rsp, rbp
     pop rbp
     
     ret

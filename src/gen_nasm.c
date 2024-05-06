@@ -8,14 +8,22 @@
 static FILE* out;
 
 static const char* buitlin_fcts[] = {
-    "../builtin/getchar.asm",
-    "../builtin/getint.asm",
-    "../builtin/putchar.asm",
-    "../builtin/putint.asm",
+    "./builtin/getchar.asm",
+    "./builtin/getint.asm",
+    "./builtin/putchar.asm",
+    "./builtin/putint.asm",
     NULL
 };
 
-static void write_init(int globals_size);
+static const char* buitlin_name[] = {
+    "getchar",
+    "getint",
+    "putchar",
+    "putint",
+    NULL
+};
+
+static void write_init(const FunctionCollection* coll, int globals_size);
 static void write_exit(void);
 static int create_file(char* output);
 static void write_tree(const Table* globals, const FunctionCollection* collection,
@@ -35,11 +43,11 @@ static void write_character(const Node* tree);
 
 static void write_builtin(FILE* file) {
     char buffer[BUFFER_SIZE];
-    int count;
-    while ((count = fread(buffer, BUFFER_SIZE, ftell(file), file))) {
-        fwrite(buffer, BUFFER_SIZE, count, out);
+    while (fgets(buffer, BUFFER_SIZE, file)) {
+        fputs(buffer, out);
     }
-}
+    fputc('\n', out);
+}   
 
 static int write_buitlins(void) {
     FILE* bfile; 
@@ -55,15 +63,22 @@ static int write_buitlins(void) {
     return 1;
 }
 
-static void write_init(int globals_size) {
-    fprintf(out, "section .bss\n"
+static void write_init(const FunctionCollection* coll, int globals_size) {
+    fprintf(out, "global _start\n"
+                 "section .bss\n"
                  "\tglobals: resb %d\n"
                  "\nsection .text\n", globals_size);
 
-    write_buitlins();
+    // check if the builtin functions are ever used to not surcharge the
+    // generated nasm
+    for (int i = 0; buitlin_name[i]; i++) {
+        if (get_function(coll, buitlin_name[i])->is_used) {
+            write_buitlins();
+            break;
+        }
+    }
 
-    fprintf(out, "\nglobal _start\n\n"
-                 "\n_start:\n"
+    fprintf(out, "\n_start:\n"
                  "\tcall main\n");
     write_exit();
 }
@@ -267,7 +282,7 @@ void gen_nasm(char* output, const Table* globals, const FunctionCollection* coll
     if (!create_file(output)) {
         return;
     }
-    write_init(globals->total_bytes);
+    write_init(collection, globals->total_bytes);
 
     write_functions(globals, collection, tree);
 

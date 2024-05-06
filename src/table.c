@@ -395,7 +395,7 @@ static int check_used(Table* globals, Function* fun, FunctionCollection* coll, N
 static int create_builtin_function(Function* fun, builtin spe) {
     *fun = (Function){.decl_col = -1,
                       .decl_line = -1,
-                      .is_used = true,
+                      .is_used = false,
                       .r_type = spe.r_type
                       };
     strcpy(fun->name, spe.name);
