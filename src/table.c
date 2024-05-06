@@ -8,6 +8,7 @@
 #include "types.h"
 
 #define NB_BUILTIN 4
+#define CALL_OFFSET 16
 
 typedef struct {        // structure for builtin function
     char* name;         // function name
@@ -58,7 +59,7 @@ static int realloc_table(Table* table);
  * @return 1 if success
  *         0 if error due to memory error
  */
-static int insert_entry(Table* table, Entry entry, bool update_adress);
+static int insert_entry(Table* table, Entry entry, int new_address);
 
 /**
  * @brief Assign to the given function its return type
@@ -209,7 +210,7 @@ static int realloc_table(Table* table) {
     return 1;
 }
 
-static int insert_entry(Table* table, Entry entry, bool update_adress) {
+static int insert_entry(Table* table, Entry entry, int new_address) {
     if (!table) return 0;
     int index;
     if ((index = is_in_table(table, entry.name)) != -1) {
@@ -222,11 +223,9 @@ static int insert_entry(Table* table, Entry entry, bool update_adress) {
         if (!realloc_table(table)) return 0;
     }
 
-    if (update_adress || table->cur_len == 6) {
-        entry.address = table->total_bytes;
-        table->total_bytes += entry.size;
-    }
+    entry.address = new_address;
 
+    table->total_bytes += entry.size;
     table->array[table->cur_len] = entry;
     table->cur_len++;
     return 1;
@@ -247,14 +246,26 @@ static int init_param_list(Table* table, Node* node) {
         return 1;
     }
     
+    int new_address;
     t_type type = get_type(node->val.ident);
     Entry entry;
     if (!init_entry(&entry, type, FIRSTCHILD(node))) {
         return 0;
     }
-    if (!insert_entry(table, entry, false)) {
+
+    if (table->cur_len < 6) {
+        new_address = table->total_bytes + entry.size;
+        table->offset += entry.size;
+    } else if (table->cur_len == 6) {
+        new_address = CALL_OFFSET;
+    } else {
+        new_address = table->array[table->cur_len - 1].address + entry.size;
+    }
+
+    if (!insert_entry(table, entry, new_address)) {
         return 0;
     }
+    
     init_param_list(table, node->nextSibling);
     return 1;
 }
@@ -276,14 +287,20 @@ static int init_function(Function* fun, Node* node, Table* globals) {
     if (!init_table(&fun->parameters)) {
         return 0;
     }
+    if (node->nextSibling->nextSibling->label == ListTypVar) {
+        if (!init_param_list(&fun->parameters, node->nextSibling->nextSibling->firstChild)) {
+            free(&fun->parameters);
+            return 0;
+        }
+    }
+
     if (!init_table(&fun->locals)) {
         free(fun->parameters.array);
         return 0;
     }
-    if (node->nextSibling->nextSibling->label == ListTypVar) {
-        return init_param_list(&fun->parameters,
-                               node->nextSibling->nextSibling->firstChild);
-    }
+
+    // add an offset of 8 to prevent going on the wrong stack address
+    fun->locals.total_bytes = 8;
     return 1;
 }
 
@@ -337,17 +354,21 @@ static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* n
                                 parameters->array[index].decl_line);
             return 0;
         }
+
+        if (!insert_entry(table, entry, table->total_bytes)) {
+            return 0;
+        }
     } else { // globals
         if ((index = is_in_collection(coll, entry.name)) != -1) {
             redefinition_of_builtin_functions(entry.name, entry.decl_line,
                                               entry.decl_col);
             return 0;
         }
+        if (!insert_entry(table, entry, table->total_bytes)) {
+            return 0;
+        }
     }
 
-    if (!insert_entry(table, entry, true)) {
-        return 0;
-    }
     return decl_var(table, coll, type, node->nextSibling, parameters);
 }
 
@@ -410,7 +431,7 @@ static int create_builtin_function(Function* fun, builtin spe) {
                               .name = "arg",
                               .size = 8,
                               .type = spe.param};
-        if (!insert_entry(&fun->parameters, entry, false)) {
+        if (!insert_entry(&fun->parameters, entry, 0)) {
             free_table(&fun->parameters);
             return 0;
         }
@@ -441,6 +462,7 @@ int init_table(Table* table) {
     table->total_bytes = 0;
     table->sorted = false;
     table->cur_len = 0;
+    table->offset = 0;
     table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
     if (!table->array) {

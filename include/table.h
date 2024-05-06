@@ -23,6 +23,7 @@ typedef struct {            // symbol table
     int cur_len;            // curent length of the table
     int max_len;            // maximum length of the table
     int total_bytes;        // bytes used in the table
+    int offset;             // offset in bytes
     Entry* array;           // entry array
 } Table;
 

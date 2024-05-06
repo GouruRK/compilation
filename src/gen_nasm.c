@@ -5,6 +5,9 @@
 
 #define BUFFER_SIZE 512
 
+#define MIN(a, b) ((a) < (b) ? (a): (b))
+#define MAX(a, b) ((a) > (b) ? (a): (b))
+
 static FILE* out;
 
 static const char* buitlin_fcts[] = {
@@ -191,17 +194,26 @@ static void write_function(Function* fun) {
                  "%s:\n"
                  "\t; sauvegarde du retour de pile\n"
                  "\tpush rbp\n"
-                 "\tmov rbp, rsp\n"
-                 "\n\t; réservation de mémoire pour les variables locales\n"
+                 "\tmov rbp, rsp\n",
+                 fun->name, fun->name);
+    
+    fprintf(out, "\n\t; On met les paramètres sur la pile\n");
+
+    for (int i = MIN(fun->parameters.cur_len, 6) - 1; i > -1; i--) {
+        fprintf(out, "\tpush %s\n", param_registers[i]);
+    }
+
+    fprintf(out, "\n\t; allocation de mémoire pour les variables locales\n"
                  "\tsub rsp, %d\n\n"
                  "\t; corps de la fonction\n",
-                 fun->name, fun->name, fun->locals.total_bytes);
+                 fun->locals.total_bytes);
+
 }
 
 static void write_assign(const Table* globals, const FunctionCollection* collection,
                          const Function* fun, const Node* tree) {
     
-    //! Uncomment this when arrays evaluation is done
+    // ! Uncomment this when arrays evaluation is done
     // write_tree(globals, collection, fun, FIRSTCHILD(tree));
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     
@@ -209,12 +221,12 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
     if ((entry = get_entry(&fun->locals, FIRSTCHILD(tree)->val.ident))) {
         fprintf(out, "\n\t; assignation\n"
                      "\tpop qword [rbp - %d]\n",
-                     entry->address);
+                     fun->parameters.offset + entry->address);
     } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
         // TODO: handle parameter access
     } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
         fprintf(out, "\n\t; assignation\n"
-                     "mov rcx, globals\n"
+                     "\tmov rcx, globals\n"
                      "\tpop qword [rcx + %d]\n",
                      entry->address);
     }
@@ -243,8 +255,7 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
             fprintf(out, "\tpop %s\n", param_registers[i]);
         }
     }
-    fprintf(out, "\n\t; appel de fonction et alignement\n"
-                 "\tand rsp, -16\n"
+    fprintf(out, "\n\t; appel de fonction\n"
                  "\tcall %s\n",
                  tree->val.ident);
     
@@ -261,16 +272,15 @@ static void write_load_ident(const Table* globals, const FunctionCollection* col
     if ((entry = get_entry(&fun->locals, tree->val.ident))) {
         fprintf(out, "\n\t; load local value store in %s\n"
                      "\tpush qword [rbp - %d]\n",
-                     entry->name, entry->address);
+                     entry->name, fun->parameters.offset + entry->address);
     } else if ((entry = get_entry(&fun->parameters, tree->val.ident))) {
         index = is_in_table(&fun->parameters, tree->val.ident);
         if (index < 6) {
-            fprintf(out, "\n\t; on accede a un parametre depuis un registre\n"
-                         "\tpush %s\n", param_registers[index]);
+            fprintf(out, "\n\t; load parameter value store in '%s' after function call\n"
+                         "\tpush qword [rbp - %d]\n", entry->name, entry->address);
         } else {
-            // TODO: add address of parameters in symbol table
-            fprintf(out, "\n\t; on accede a un parametre depuis la pile\n"
-                         "\tpush qword [rbp + %d]\n", entry->address);
+            fprintf(out, "\n\t; load parameter value store in '%s' before function call\n"
+                         "\tpush qword [rbp + %d]\n", entry->name, entry->address);
         }
     } else if ((entry = get_entry(globals, tree->val.ident))) {
         fprintf(out, "\n\t; load global value store in %s\n"
