@@ -222,12 +222,12 @@ static int insert_entry(Table* table, Entry entry, bool update_adress) {
         if (!realloc_table(table)) return 0;
     }
 
-    if (update_adress) {
+    if (update_adress || table->cur_len == 6) {
         entry.address = table->total_bytes;
+        table->total_bytes += entry.size;
     }
 
     table->array[table->cur_len] = entry;
-    table->total_bytes += entry.size;
     table->cur_len++;
     return 1;
 }

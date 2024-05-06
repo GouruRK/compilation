@@ -23,6 +23,16 @@ static const char* buitlin_name[] = {
     NULL
 };
 
+static const char* param_registers[] = {
+    "rdi",
+    "rsi",
+    "rdx",
+    "rcx",
+    "r8",
+    "r9",
+    NULL
+};
+
 static void write_init(const FunctionCollection* coll, int globals_size);
 static void write_exit(void);
 static int create_file(char* output);
@@ -211,22 +221,64 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
 
 }
 
+static void write_parameters(const Table* globals, const FunctionCollection* collection,
+                             const Function* fun, const Node* tree) {
+    //* We want to treat the first parameter at the very last
+    //* So parameters are handled in reverse order
+
+    if (!tree) return;
+    write_parameters(globals, collection, fun, tree->nextSibling);
+    write_tree(globals, collection, fun, tree);
+}
+
+static void write_function_call(const Table* globals, const FunctionCollection* collection,
+                                const Function* fun, const Node* tree) {
+    Function* to_call = get_function(collection, tree->val.ident);
+    
+    if (FIRSTCHILD(tree)->label == ListExp) {
+        write_parameters(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
+        fprintf(out, "\n\t; on met les valeurs dans leurs registres\n");
+        
+        for (int i = 0; i < to_call->parameters.cur_len && i < 6; i++) {
+            fprintf(out, "\tpop %s\n", param_registers[i]);
+        }
+    }
+    fprintf(out, "\n\t; appel de fonction et alignement\n"
+                 "\tand rsp, -16\n"
+                 "\tcall %s\n",
+                 tree->val.ident);
+    
+    if (to_call->r_type != T_VOID) {
+        fprintf(out, "\n\t; on push la valeur de retour\n"
+                     "\tpush rax\n");
+    }
+}
+
 static void write_load_ident(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree) {
     Entry* entry;
+    int index;
     if ((entry = get_entry(&fun->locals, tree->val.ident))) {
         fprintf(out, "\n\t; load local value store in %s\n"
                      "\tpush qword [rbp - %d]\n",
                      entry->name, entry->address);
     } else if ((entry = get_entry(&fun->parameters, tree->val.ident))) {
-        // TODO: handle parameter access
+        index = is_in_table(&fun->parameters, tree->val.ident);
+        if (index < 6) {
+            fprintf(out, "\n\t; on accede a un parametre depuis un registre\n"
+                         "\tpush %s\n", param_registers[index]);
+        } else {
+            // TODO: add address of parameters in symbol table
+            fprintf(out, "\n\t; on accede a un parametre depuis la pile\n"
+                         "\tpush qword [rbp + %d]\n", entry->address);
+        }
     } else if ((entry = get_entry(globals, tree->val.ident))) {
         fprintf(out, "\n\t; load global value store in %s\n"
                      "\tmov rcx, globals\n"
                      "\tpush qword [rcx + %d]\n",
                      entry->name, entry->address);
     } else {
-        // TODO: function call
+        write_function_call(globals, collection, fun, tree);
     }
 }
 
