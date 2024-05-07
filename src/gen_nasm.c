@@ -291,13 +291,13 @@ static void write_init(const FunctionCollection* coll, int globals_size) {
     }
 
     fprintf(out, "\n_start:\n"
-                 "\tcall main\n");
+                 "\tcall\tmain\n");
     write_exit();
 }
 
 static void write_exit(void) {
-    fprintf(out, "\tmov rdi, rax\n"
-                 "\tmov rax, 60\n"
+    fprintf(out, "\tmov\trdi, rax\n"
+                 "\tmov\trax, 60\n"
                  "\tsyscall\n");
 }
 
@@ -315,17 +315,17 @@ static void write_add_sub_mul(const Table* globals, const FunctionCollection* co
     if (!SECONDCHILD(tree)) { // unary plus and minus
         if (tree->val.ident[0] == '-') {
             fprintf(out, "\n\t; negation unaire\n"
-                         "\tpop rax\n"
-                         "\tneg rax\n"
-                         "\tpush rax\n");
+                         "\tpop\trax\n"
+                         "\tneg\trax\n"
+                         "\tpush\trax\n");
         }
     } else {
         write_tree(globals, collection, fun, SECONDCHILD(tree));
         fprintf(out, "\n\t; opération binaire (%c)\n"
-                     "\tpop rcx\n"
-                     "\tpop rax\n"
-                     "\t%s rax, rcx\n"
-                     "\tpush rax\n",
+                     "\tpop\trcx\n"
+                     "\tpop\trax\n"
+                     "\t%s\trax, rcx\n"
+                     "\tpush\trax\n",
                      tree->val.ident[0],
                      sym_op[(int)tree->val.ident[0]]);
     }
@@ -338,18 +338,18 @@ static void write_div_mod(const Table* globals, const FunctionCollection* collec
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     if(tree->val.ident[0] == '/') {
         fprintf(out, "\n\t; division\n"
-                     "\tmov rdx, 0\n"
-                     "\tpop rcx\n"
-                     "\tpop rax\n"
-                     "\tidiv rcx\n"
-                     "\tpush rax\n");
+                     "\tmov\trdx, 0\n"
+                     "\tpop\trcx\n"
+                     "\tpop\trax\n"
+                     "\tidiv\trcx\n"
+                     "\tpush\trax\n");
     } else if(tree->val.ident[0] == '%') {
         fprintf(out, "\n\t; modulo\n"
-                     "\tpop rcx\n"
-                     "\tpop rax\n"
-                     "\tmov rdx, 0\n"
-                     "\tidiv rcx\n"
-                     "\tpush rdx\n");
+                     "\tpop\trcx\n"
+                     "\tpop\trax\n"
+                     "\tmov\trdx, 0\n"
+                     "\tidiv\trcx\n"
+                     "\tpush\trdx\n");
     }
 }
 
@@ -364,8 +364,8 @@ static void write_arithmetic(const Table* globals, const FunctionCollection* col
 
 static void write_function_exit(void) {
     fprintf(out, "\n\t; retablissement de la pile avant retour\n"
-                 "\tmov rsp, rbp\n"
-                 "\tpop rbp\n"
+                 "\tmov\trsp, rbp\n"
+                 "\tpop\trbp\n"
                  "\tret\n");
 }
 
@@ -374,7 +374,7 @@ static void write_return(const Table* globals, const FunctionCollection* collect
     if (fun->r_type != T_VOID) {
         write_tree(globals, collection, fun, FIRSTCHILD(tree));
         fprintf(out, "\n\t; chargement de la valeur de retour\n" 
-                     "\tpop rax\n");
+                     "\tpop\trax\n");
     }
     write_function_exit();
 }
@@ -383,14 +383,14 @@ static void write_function(Function* fun) {
     fprintf(out, "\n; fonction %s\n"
                  "%s:\n"
                  "\t; sauvegarde du retour de pile\n"
-                 "\tpush rbp\n"
-                 "\tmov rbp, rsp\n",
+                 "\tpush\trbp\n"
+                 "\tmov\trbp, rsp\n",
                  fun->name, fun->name);
     
     fprintf(out, "\n\t; On met les paramètres sur la pile\n");
 
     for (int i = MIN(fun->parameters.cur_len, 6) - 1; i > -1; i--) {
-        fprintf(out, "\tpush %s\n", param_registers[i]);
+        fprintf(out, "\tpush\t%s\n", param_registers[i]);
     }
 
     fprintf(out, "\n\t; allocation de mémoire pour les variables locales\n"
@@ -411,21 +411,21 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
     int index;
     if ((entry = get_entry(&fun->locals, FIRSTCHILD(tree)->val.ident))) {
         fprintf(out, "\n\t; assignation to '%s'\n"
-                     "\tpop qword [rbp - %d]\n",
+                     "\tpop\tqword [rbp - %d]\n",
                      entry->name, fun->parameters.offset + entry->address);
     } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
         index = is_in_table(&fun->parameters, tree->val.ident);
         if (index < 6) {
             fprintf(out, "\n\t; assignation to '%s' after function call\n"
-                         "\tpop qword [rbp - %d]\n", entry->name, entry->address);
+                         "\tpop\tqword [rbp - %d]\n", entry->name, entry->address);
         } else {
             fprintf(out, "\n\t; assignation to '%s' before function call\n"
-                         "\tpop qword [rbp + %d]\n", entry->name, entry->address);
+                         "\tpop\tqword [rbp + %d]\n", entry->name, entry->address);
         }
     } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
         fprintf(out, "\n\t; assignation to '%s'\n"
-                     "\tmov rcx, globals\n"
-                     "\tpop qword [rcx + %d]\n",
+                     "\tmov\trcx, globals\n"
+                     "\tpop\tqword [rcx + %d]\n",
                      entry->name, entry->address);
     }
 
@@ -450,16 +450,16 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
         fprintf(out, "\n\t; on met les valeurs dans leurs registres\n");
         
         for (int i = 0; i < to_call->parameters.cur_len && i < 6; i++) {
-            fprintf(out, "\tpop %s\n", param_registers[i]);
+            fprintf(out, "\tpop\t%s\n", param_registers[i]);
         }
     }
     fprintf(out, "\n\t; appel de fonction\n"
-                 "\tcall %s\n",
+                 "\tcall\t%s\n",
                  tree->val.ident);
     
     if (to_call->r_type != T_VOID) {
         fprintf(out, "\n\t; on push la valeur de retour\n"
-                     "\tpush rax\n");
+                     "\tpush\trax\n");
     }
 }
 
@@ -469,21 +469,21 @@ static void write_load_ident(const Table* globals, const FunctionCollection* col
     int index;
     if ((entry = get_entry(&fun->locals, tree->val.ident))) {
         fprintf(out, "\n\t; load local value store in %s\n"
-                     "\tpush qword [rbp - %d]\n",
+                     "\tpush\tqword [rbp - %d]\n",
                      entry->name, fun->parameters.offset + entry->address);
     } else if ((entry = get_entry(&fun->parameters, tree->val.ident))) {
         index = is_in_table(&fun->parameters, tree->val.ident);
         if (index < 6) {
             fprintf(out, "\n\t; load parameter value store in '%s' after function call\n"
-                         "\tpush qword [rbp - %d]\n", entry->name, entry->address);
+                         "\tpush\tqword [rbp - %d]\n", entry->name, entry->address);
         } else {
             fprintf(out, "\n\t; load parameter value store in '%s' before function call\n"
-                         "\tpush qword [rbp + %d]\n", entry->name, entry->address);
+                         "\tpush\tqword [rbp + %d]\n", entry->name, entry->address);
         }
     } else if ((entry = get_entry(globals, tree->val.ident))) {
         fprintf(out, "\n\t; load global value store in %s\n"
-                     "\tmov rcx, globals\n"
-                     "\tpush qword [rcx + %d]\n",
+                     "\tmov\trcx, globals\n"
+                     "\tpush\tqword [rcx + %d]\n",
                      entry->name, entry->address);
     } else {
         write_function_call(globals, collection, fun, tree);
@@ -492,7 +492,7 @@ static void write_load_ident(const Table* globals, const FunctionCollection* col
 
 static void write_num(const Node* tree) {
     fprintf(out, "\n\t; lecture d'entier\n"
-                 "\tpush %d\n",
+                 "\tpush\t%d\n",
                  tree->val.num);
 }
 
@@ -508,11 +508,11 @@ static void write_character(const Node* tree) {
 
     if (sym == -1) {
         fprintf(out, "\n\t; lecture de charactere\n"
-                     "\tpush %s\n",
+                     "\tpush\t%s\n",
                      tree->val.ident);
     } else {
         fprintf(out, "\n\t; lecture de charactere\n"
-                     "\tpush %d\n",
+                     "\tpush\t%d\n",
                      sym);
     }
 
