@@ -78,11 +78,8 @@ static int create_file(char* output) {
     if (!output) {
         output = "_anonymous";
     } else {
-        printf("file: %s\n", output);
         output = sub_path(output);
-        printf("file: %s\n", output);
         output[strlen(output) - 4] = '\0';
-        printf("file: %s\n", output);
     }
     char filename[64];
     snprintf(filename, 64, "obj/%s.asm", output);
@@ -104,7 +101,6 @@ static int write_buitlins(void) {
     for (int i = 0; buitlin_fcts[i]; i++) {
         bfile = fopen(buitlin_fcts[i], "r");
         if (!bfile) {
-            printf("failed to open %s\n", buitlin_fcts[i]);
             return 0;
         }
         write_builtin(bfile);
@@ -324,9 +320,25 @@ static void write_num(const Node* tree) {
 }
 
 static void write_character(const Node* tree) {
-    fprintf(out, "\n\t; lecture de charactere\n"
-                 "\tpush '%c'\n",
-                 tree->val.c);
+    int sym = -1;
+    if (!strcmp(tree->val.ident, "'\\n'")) {
+        sym = '\n';
+    } else if (!strcmp(tree->val.ident, "'\\t'")) {
+        sym = '\t';
+    } else if (!strcmp(tree->val.ident, "'\\r'")) {
+        sym = '\r';
+    }
+
+    if (sym == -1) {
+        fprintf(out, "\n\t; lecture de charactere\n"
+                     "\tpush %s\n",
+                     tree->val.ident);
+    } else {
+        fprintf(out, "\n\t; lecture de charactere\n"
+                     "\tpush %d\n",
+                     sym);
+    }
+
 }
 
 static void write_tree(const Table* globals, const FunctionCollection* collection,

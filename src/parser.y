@@ -21,11 +21,6 @@ extern FILE *yyin;
 Value to_int(int n);
 
 /**
- * @brief Set a value with the type of char
- */
-Value to_char(char c);
-
-/**
  * @brief Set a value with the type of char*
  */
 Value to_str(char* str);
@@ -34,7 +29,7 @@ Value to_str(char* str);
 %union{
     Node *node;
     char ident[64];
-    char carac;
+    char carac[3];
     int num;
 }
 
@@ -130,7 +125,7 @@ SuiteInstr:
     |                                       { $$ = makeNode(SuiteInstr); }
     ;
 Instr:
-       LValue '=' Exp ';'                   { $$ = makeNodeWithValue(to_char('='), Assignation);
+       LValue '=' Exp ';'                   { $$ = makeNodeWithValue(to_str("="), Assignation);
                                               addChild($$, $1);
                                               addSibling(FIRSTCHILD($$), $3); }
     |  IF '(' Exp ')' Instr                 { $$ = makeNode(If);
@@ -191,11 +186,11 @@ T   :  T DIVSTAR F                          { Node* n = makeNodeWithValue(to_str
     ;
 F   :  ADDSUB F                             { $$ = makeNodeWithValue(to_str($1), AddSub); 
                                               addChild($$, $2); }
-    |  '!' F                                { $$ = makeNodeWithValue(to_char('!'), Negation); 
+    |  '!' F                                { $$ = makeNodeWithValue(to_str("!"), Negation); 
                                               addChild($$, $2); }
     |  '(' Exp ')'                          { $$ = $2; }
     |  NUM                                  { $$ = makeNodeWithValue(to_int($1), Num); }
-    |  CHARACTER                            { $$ = makeNodeWithValue(to_char($1), Character); }
+    |  CHARACTER                            { $$ = makeNodeWithValue(to_str($1), Character); }
     |  LValue                               { $$ = $1; }
     |  IDENT '(' Arguments  ')'             { $$ = makeNodeWithValue(to_str($1), Ident);
                                               addChild($$, $3); }
@@ -229,10 +224,6 @@ Value to_str(char* val) {
 
 Value to_int(int n) {
     return (Value){.num = n};
-}
-
-Value to_char(char c) {
-    return (Value){.c = c};
 }
 
 /**

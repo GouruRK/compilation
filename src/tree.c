@@ -119,7 +119,7 @@ static void printNode(Node* node) {
             printf("%d (Num)", node->val.num);
             break;
         case Character:
-            printf("'%c' (Character)", node->val.c);
+            printf("%s (Character)", node->val.ident);
             break;
         case Ident: case Type: case Or: case And:
         case Eq: case Order: case DivStar: case AddSub:

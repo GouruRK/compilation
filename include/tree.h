@@ -46,7 +46,6 @@ typedef enum {
 
 typedef union {
     int num;
-    char c;
     char ident[IDENT_LEN];
 } Value;
 
