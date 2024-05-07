@@ -8,8 +8,10 @@
 #define MIN(a, b) ((a) < (b) ? (a): (b))
 #define MAX(a, b) ((a) > (b) ? (a): (b))
 
+// nasm target
 static FILE* out;
 
+// builtin source file path 
 static const char* buitlin_fcts[] = {
     "./builtin/getchar.asm",
     "./builtin/getint.asm",
@@ -18,6 +20,7 @@ static const char* buitlin_fcts[] = {
     NULL
 };
 
+// name of the builtin functions
 static const char* buitlin_name[] = {
     "getchar",
     "getint",
@@ -26,6 +29,7 @@ static const char* buitlin_name[] = {
     NULL
 };
 
+// registers for arguments, according to AMD64 conventions
 static const char* param_registers[] = {
     "rdi",
     "rsi",
@@ -90,7 +94,7 @@ static void write_exit(void);
  * @param globals global's table
  * @param collection collection of functions
  * @param fun current function where the operation is computed
- * @param tree head node
+ * @param tree head node with the 'AddSub' or 'DivStar' label
  */
 static void write_add_sub_mul(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, const Node* tree);
@@ -102,27 +106,129 @@ static void write_add_sub_mul(const Table* globals, const FunctionCollection* co
  * @param globals global's table
  * @param collection collection of function
  * @param fun current function where the operation is computed
- * @param tree head node
+ * @param tree head node with the 'DivStar' label
  */
 static void write_div_mod(const Table* globals, const FunctionCollection* collection,
                           const Function* fun, const Node* tree);
+
+/**
+ * @brief Write nasm code for arithemtic operation where nodes labels are either
+ *        'AddSub' or 'DivStar'
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun current function where the arithmetic is performed
+ * @param tree head node with the 'AddSub' or 'DivStar' label
+ */
 static void write_arithmetic(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree);
+
+/**
+ * @brief Write nasm code to set rbp and rsp to their correct values when
+ *        exiting a function
+ * 
+ */
+static void write_function_exit(void);
+
+/**
+ * @brief Write nasm code to handle function returns
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun current function where the return is computed
+ * @param tree head node with the 'Return' label
+ */
 static void write_return(const Table* globals, const FunctionCollection* collection,
                          const Function* fun, const Node* tree);
-static void write_functions(const Table* globals, const FunctionCollection* collection, const Node* tree);
+
+/**
+ * @brief Write nasm code to handle function declaration, stack operations for
+ *        parameters and memory allocation for locals
+ * 
+ * @param fun function to write declaration
+ */
+static void write_function(Function* fun);
+
+/**
+ * @brief Write assignation between an identifer and a value
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the assignation is computed
+ * @param tree head node with the 'Assignation' label
+ */
 static void write_assign(const Table* globals, const FunctionCollection* collection,
                          const Function* fun, const Node* tree);
+
+/**
+ * @brief Write parameters assignation when calling a function. This function
+ *        uses the AMD64 code conventions on parameters use
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the call is computed
+ * @param tree first parameter node
+ */
 static void write_parameters(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree);
+
+/**
+ * @brief Write nasm code to handle function call
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun current function where the call is computed
+ * @param tree head node with the 'Ident' label, the name of the function
+ */
 static void write_function_call(const Table* globals, const FunctionCollection* collection,
                                 const Function* fun, const Node* tree);
+
+/**
+ * @brief Write nasm code to get variables values on top of the stack
+ * 
+ * @param globals global's table
+ * @param collection collection of funtion
+ * @param fun current function where the variable is used
+ * @param tree head node with the 'Ident' label
+ */
 static void write_load_ident(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree);
+
+/**
+ * @brief Push on stack the number store in tree
+ * 
+ * @param tree 
+ */
 static void write_num(const Node* tree);
+
+/**
+ * @brief Push on stack the charactre stored in tree. In case of special
+ *        caracters, push their numerical equivalent
+ * 
+ * @param tree 
+ */
 static void write_character(const Node* tree);
+
+/**
+ * @brief Write nasm code for each instruction of a function
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun function where the instructions are performed
+ * @param tree node to write
+ */
 static void write_tree(const Table* globals, const FunctionCollection* collection,
                        const Function* fun, const Node* tree);
+
+/**
+ * @brief Write all function declarations and their code
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param tree head of the programm, node with the 'Prog' label 
+ */
+static void write_functions(const Table* globals, const FunctionCollection* collection, const Node* tree);
+
 
 static char* sub_path(char* path) {
     int len = strlen(path), i;
@@ -225,6 +331,7 @@ static void write_add_sub_mul(const Table* globals, const FunctionCollection* co
     }
 
 }
+
 static void write_div_mod(const Table* globals, const FunctionCollection* collection,
                           const Function* fun, const Node* tree) {
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
@@ -255,6 +362,13 @@ static void write_arithmetic(const Table* globals, const FunctionCollection* col
     }
 }
 
+static void write_function_exit(void) {
+    fprintf(out, "\n\t; retablissement de la pile avant retour\n"
+                 "\tmov rsp, rbp\n"
+                 "\tpop rbp\n"
+                 "\tret\n");
+}
+
 static void write_return(const Table* globals, const FunctionCollection* collection,
                          const Function* fun, const Node* tree) {
     if (fun->r_type != T_VOID) {
@@ -262,12 +376,7 @@ static void write_return(const Table* globals, const FunctionCollection* collect
         fprintf(out, "\n\t; chargement de la valeur de retour\n" 
                      "\tpop rax\n");
     }
-    
-
-    fprintf(out, "\n\t; retablissement de la pile avant retour\n"
-                "\tmov rsp, rbp\n"
-                 "\tpop rbp\n"
-                 "\tret\n");
+    write_function_exit();
 }
 
 static void write_function(Function* fun) {
@@ -299,17 +408,25 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     
     Entry* entry;
+    int index;
     if ((entry = get_entry(&fun->locals, FIRSTCHILD(tree)->val.ident))) {
-        fprintf(out, "\n\t; assignation\n"
+        fprintf(out, "\n\t; assignation to '%s'\n"
                      "\tpop qword [rbp - %d]\n",
-                     fun->parameters.offset + entry->address);
+                     entry->name, fun->parameters.offset + entry->address);
     } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
-        // TODO: handle parameter access
+        index = is_in_table(&fun->parameters, tree->val.ident);
+        if (index < 6) {
+            fprintf(out, "\n\t; assignation to '%s' after function call\n"
+                         "\tpop qword [rbp - %d]\n", entry->name, entry->address);
+        } else {
+            fprintf(out, "\n\t; assignation to '%s' before function call\n"
+                         "\tpop qword [rbp + %d]\n", entry->name, entry->address);
+        }
     } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
-        fprintf(out, "\n\t; assignation\n"
+        fprintf(out, "\n\t; assignation to '%s'\n"
                      "\tmov rcx, globals\n"
                      "\tpop qword [rcx + %d]\n",
-                     entry->address);
+                     entry->name, entry->address);
     }
 
 }
@@ -428,10 +545,12 @@ static void write_functions(const Table* globals, const FunctionCollection* coll
         head_instr = FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node)));
         write_function(fun);
 
+
         for (; head_instr;) {
             write_tree(globals, collection, fun, head_instr);
             head_instr = head_instr->nextSibling;
         }
+        write_function_exit();
         
         decl_fonct_node = decl_fonct_node->nextSibling;
     }
