@@ -36,23 +36,60 @@ static const char* param_registers[] = {
     NULL
 };
 
+static char* sub_path(char* path);
+static int create_file(char* output);
+static void write_builtin(FILE* file);
+static int write_buitlins(void);
 static void write_init(const FunctionCollection* coll, int globals_size);
 static void write_exit(void);
-static int create_file(char* output);
-static void write_tree(const Table* globals, const FunctionCollection* collection,
-                       const Function* fun, const Node* tree);
 static void write_add_sub_mul(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, const Node* tree);
 static void write_div_mod(const Table* globals, const FunctionCollection* collection,
                           const Function* fun, const Node* tree);
 static void write_arithmetic(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree);
-static void write_functions(const Table* globals, const FunctionCollection* collection, const Node* tree);
 static void write_return(const Table* globals, const FunctionCollection* collection,
+                         const Function* fun, const Node* tree);
+static void write_functions(const Table* globals, const FunctionCollection* collection, const Node* tree);
+static void write_assign(const Table* globals, const FunctionCollection* collection,
+                         const Function* fun, const Node* tree);
+static void write_parameters(const Table* globals, const FunctionCollection* collection,
+                             const Function* fun, const Node* tree);
+static void write_function_call(const Table* globals, const FunctionCollection* collection,
+                                const Function* fun, const Node* tree);
+static void write_load_ident(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree);
 static void write_num(const Node* tree);
 static void write_character(const Node* tree);
+static void write_tree(const Table* globals, const FunctionCollection* collection,
+                       const Function* fun, const Node* tree);
 
+static char* sub_path(char* path) {
+    int len = strlen(path), i;
+    for (i = len - 1; i > -1; i--) {
+        if (path[i] == '/') {
+            return path + i + 1;
+        }
+    }
+    return path;
+}
+
+static int create_file(char* output) {
+    if (!output) {
+        output = "_anonymous";
+    } else {
+        printf("file: %s\n", output);
+        output = sub_path(output);
+        printf("file: %s\n", output);
+        output[strlen(output) - 4] = '\0';
+        printf("file: %s\n", output);
+    }
+    char filename[64];
+    snprintf(filename, 64, "obj/%s.asm", output);
+
+    out = fopen(filename, "w");
+    return out != NULL;
+}
 
 static void write_builtin(FILE* file) {
     char buffer[BUFFER_SIZE];
@@ -60,7 +97,7 @@ static void write_builtin(FILE* file) {
         fputs(buffer, out);
     }
     fputc('\n', out);
-}   
+}
 
 static int write_buitlins(void) {
     FILE* bfile; 
@@ -102,18 +139,6 @@ static void write_exit(void) {
                  "\tsyscall\n");
 }
 
-static int create_file(char* output) {
-    if (!output) {
-        output = "_anonymous";
-    } else {
-        output[strlen(output) - 4] = '\0';
-    }
-    char filename[64];
-    snprintf(filename, 64, "obj/%s.asm", output);
-
-    out = fopen(filename, "w");
-    return out != NULL;
-}
 
 static void write_add_sub_mul(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, const Node* tree) {
