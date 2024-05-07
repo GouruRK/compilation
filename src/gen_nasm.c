@@ -36,14 +36,74 @@ static const char* param_registers[] = {
     NULL
 };
 
+/**
+ * @brief Remove path prefix to only keep the filename
+ * 
+ * @param path path prefix to substitute
+ * @return modified path
+ */
 static char* sub_path(char* path);
+
+/**
+ * @brief Create the output file
+ * 
+ * @param output filename
+ * @return 1 in case of success
+ *         else 0
+ */
 static int create_file(char* output);
+
+/**
+ * @brief Copy `file` content to the output
+ * 
+ * @param file file to copy
+ */
 static void write_builtin(FILE* file);
+
+/**
+ * @brief Copy builtin functions in the output files
+ * 
+ * @return 1 in case of success
+ *         else 0
+ */
 static int write_buitlins(void);
+
+/**
+ * @brief Write to output the nasm header
+ *        If no buitlin functions are used, they'll not be copied in target
+ * 
+ * @param coll collection of function
+ * @param globals_size size of globals variables in bytes
+ */
 static void write_init(const FunctionCollection* coll, int globals_size);
+
+/**
+ * @brief Write syscall to exit the programm
+ * 
+ */
 static void write_exit(void);
+
+/**
+ * @brief Write nasm code instructions to handle nodes with 'AddSub' label
+ *       and 'DivStar' label only if its a multiplication 
+ * 
+ * @param globals global's table
+ * @param collection collection of functions
+ * @param fun current function where the operation is computed
+ * @param tree head node
+ */
 static void write_add_sub_mul(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, const Node* tree);
+
+/**
+ * @brief Write nasm code instructions to handle nodes with the 'DivStar' label
+ *        in operations are division and modulo
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun current function where the operation is computed
+ * @param tree head node
+ */
 static void write_div_mod(const Table* globals, const FunctionCollection* collection,
                           const Function* fun, const Node* tree);
 static void write_arithmetic(const Table* globals, const FunctionCollection* collection,
