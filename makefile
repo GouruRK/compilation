@@ -50,7 +50,7 @@ mrproper: clean
 
 zip: mrproper
 	rm -f $(ZIP_TARGET)
-	zip -r $(ZIP_TARGET) include/ src/ makefile
+	zip -r $(ZIP_TARGET) include/ src/ builtin/ makefile
 
 test: $(BIN_DIR)/$(EXEC)
 	@chmod u+x runtests.sh

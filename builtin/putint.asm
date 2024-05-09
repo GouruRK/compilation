@@ -16,10 +16,21 @@ putint:
     mov     r12, 0
 
     cmp     rax, 0
+    je      print_zero      ; on veut juste afficher 0 et quitter
     jge     loop_label_pint ; si l'entier à afficher est plus grand que 0, on l'affiche directement
-    
+
+    ; manage negatives
+    push    rax             ; save rax
     mov     rdi, '-'
+    call    putchar         ; print the neg sign
+    pop     rax
+    neg     rax
+    jmp     loop_label_pint
+
+print_zero:
+    mov     rdi, '0'
     call    putchar
+    jmp     exit_pint
 
 loop_label_pint:
     cmp     rax, 0

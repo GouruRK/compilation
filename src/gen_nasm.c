@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 
+typedef struct  {
+    char* symbol;
+    char* instr;
+} comp_op;
+
 #define BUFFER_SIZE 512
 
 #define MIN(a, b) ((a) < (b) ? (a): (b))
@@ -38,6 +43,16 @@ static const char* param_registers[] = {
     "r8",
     "r9",
     NULL
+};
+
+static const comp_op operators[] = {
+    {.symbol = "==", .instr = "je"},
+    {.symbol = "!=", .instr = "jne"},
+    {.symbol = "<",  .instr = "jl"},
+    {.symbol = "<=", .instr = "jle"},
+    {.symbol = ">",  .instr = "jg"},
+    {.symbol = ">=", .instr = "jge"},
+    {NULL,           NULL}
 };
 
 /**
@@ -490,6 +505,45 @@ static void write_load_ident(const Table* globals, const FunctionCollection* col
     }
 }
 
+static char* get_comp_sym(const char* symbol) {
+    for (int i = 0; operators[i].symbol; i++) {
+        if (!strcmp(operators[i].symbol, symbol)) {
+            return operators[i].instr;
+        }
+    }
+    return NULL;
+}
+
+static int next_free_label(void) {
+    static int label = 0;
+    return label++;
+}
+
+static void write_comp(const Table* globals, const FunctionCollection* collection,
+                       const Function* fun, const Node* tree) {
+    write_tree(globals, collection, fun, FIRSTCHILD(tree));
+    write_tree(globals, collection, fun, SECONDCHILD(tree));
+
+    fprintf(out, "\n\t; chargement des valeurs pour la comparaison\n"
+                 "\tpop\trcx\n"
+                 "\tpop\trax\n");
+    
+    int nlabel = next_free_label();
+    int ncontinue = next_free_label();
+
+    fprintf(out, "\n\t; comparaison (%s)\n"
+                 "\tcmp\trax, rcx\n"
+                 "\t%s\tlabel%d\n"
+                 "\tpush\t0\n"
+                 "\tjmp\tcontinue%d\n"
+                 "\tlabel%d:\n"
+                 "\tpush\t1\n"
+                 "\tcontinue%d:\n",
+                 tree->val.ident, get_comp_sym(tree->val.ident), nlabel,
+                 ncontinue, nlabel, ncontinue);
+    
+}
+
 static void write_num(const Node* tree) {
     fprintf(out, "\n\t; lecture d'entier\n"
                  "\tpush\t%d\n",
@@ -530,6 +584,8 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
         case DivStar:
         case AddSub: write_arithmetic(globals, collection, fun, tree); return;
         case Return: write_return(globals, collection, fun, tree); return;
+        case Order:
+        case Eq: write_comp(globals, collection, fun, tree); return;
         default: return;
     }
 }

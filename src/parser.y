@@ -148,13 +148,13 @@ Instr:
     |  '{' SuiteInstr '}'                   { $$ = $2; }
     |  ';'                                  { $$ = makeNode(EmptyInstr); }
     ;
-Exp :  Exp OR TB                            { Node* n = makeNodeWithValue(to_str($2), Or);
+Exp :  Exp OR TB                            { Node* n = makeNode(Or);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; }
     |  TB                                   { $$ = $1; }
     ;
-TB  :  TB AND FB                            { Node* n = makeNodeWithValue(to_str($2), And);
+TB  :  TB AND FB                            { Node* n = makeNode(And);
                                               addChild(n, $1);
                                               addChild(n, $3);
                                               $$ = n; }
