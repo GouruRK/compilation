@@ -265,6 +265,17 @@ static void write_or(const Table* globals, const FunctionCollection* collection,
                        const Function* fun, const Node* tree);
 
 /**
+ * @brief Write nasm code to handle negation
+ * 
+ * @param globals global's table
+ * @param collection collection of fucntion
+ * @param fun function where the 'negation' is computed
+ * @param tree head node with the 'Negation' label
+ */
+static void write_neg(const Table* globals, const FunctionCollection* collection,
+                      const Function* fun, const Node* tree);
+
+/**
  * @brief Push on stack the number store in tree
  * 
  * @param tree 
@@ -298,7 +309,6 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
  * @param tree head of the programm, node with the 'Prog' label 
  */
 static void write_functions(const Table* globals, const FunctionCollection* collection, const Node* tree);
-
 
 static char* sub_path(char* path) {
     int len = strlen(path), i;
@@ -616,7 +626,7 @@ static void write_bool_transform(void) {
 
 static void write_and(const Table* globals, const FunctionCollection* collection,
                        const Function* fun, const Node* tree) {
-    fprintf(out, "\n\t; evaluation d'un et (&&)\n"
+    fprintf(out, "\n\t; evaluation d'un 'et' (&&)\n"
                  "\n\t; evaluation du membre gauche\n");
 
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
@@ -624,7 +634,7 @@ static void write_and(const Table* globals, const FunctionCollection* collection
     int nlabel = next_free_label();
     int ncontinue = next_free_label();
 
-    fprintf(out, "\n\t; on charge le membre gauche pour l'evaluation paresseuse\n"
+    fprintf(out, "\n\t; evaluation du 'et' (&&)\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 0\n"
                  "\tjne \tlabel%d\n"
@@ -641,8 +651,8 @@ static void write_and(const Table* globals, const FunctionCollection* collection
 }
 
 static void write_or(const Table* globals, const FunctionCollection* collection,
-                       const Function* fun, const Node* tree) {    
-    fprintf(out, "\n\t; evaluation d'un ou (||)\n"
+                     const Function* fun, const Node* tree) {
+    fprintf(out, "\n\t; evaluation d'un 'ou' (||)\n"
                  "\n\t; evaluation du membre gauche\n");
 
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
@@ -650,7 +660,7 @@ static void write_or(const Table* globals, const FunctionCollection* collection,
     int nlabel = next_free_label();
     int ncontinue = next_free_label();
 
-    fprintf(out, "\n\t; on charge le membre gauche pour l'evaluation paresseuse\n"
+    fprintf(out, "\n\t; evaluation du 'or' (||)\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 1\n"
                  "\tjne \tlabel%d\n"
@@ -664,6 +674,27 @@ static void write_or(const Table* globals, const FunctionCollection* collection,
 
     fprintf(out, "\tcontinue%d:\n", ncontinue);
     write_bool_transform();
+}
+
+static void write_neg(const Table* globals, const FunctionCollection* collection,
+                      const Function* fun, const Node* tree) {
+    fprintf(out, "\n\t; evaluation d'un 'non' (!)\n");
+
+    write_tree(globals, collection, fun, FIRSTCHILD(tree));
+
+    int nlabel = next_free_label();
+    int ncontinue = next_free_label();
+
+    fprintf(out, "\n\t; evaluation du 'non' (!)\n"
+                 "\tpop \trax\n"
+                 "\tcmp \trax, 0\n"
+                 "\tje  \tlabel%d\n"
+                 "\tpush\t0\n"
+                 "\tjmp \tcontinue%d\n"
+                 "\tlabel%d:\n"
+                 "\tpush\t1\n"
+                 "\tcontinue%d:\n",
+                 nlabel, ncontinue, nlabel, ncontinue);
 }
 
 static void write_num(const Node* tree) {
@@ -710,6 +741,7 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
         case Eq: write_comp(globals, collection, fun, tree); return;
         case And: write_and(globals, collection, fun, tree); return;
         case Or: write_or(globals, collection, fun, tree); return;
+        case Negation: write_neg(globals, collection, fun, tree); return;
         default: return;
     }
 }
