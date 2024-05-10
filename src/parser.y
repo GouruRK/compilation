@@ -130,12 +130,13 @@ Instr:
                                               addSibling(FIRSTCHILD($$), $3); }
     |  IF '(' Exp ')' Instr                 { $$ = makeNode(If);
                                               addChild($$, $3);
-                                              addSibling($3, $5); }
+                                              addSibling($3, $5); 
+                                              addChild($$, makeNode(EmptyInstr)); }
     |  IF '(' Exp ')' Instr ELSE Instr      { $$ = makeNode(If);
                                               addChild($$, $3);
                                               addSibling($3, $5);
                                               Node* e = makeNode(Else);
-                                              addSibling($$, e);
+                                              addChild($$, e);
                                               addChild(e, $7); }
     |  WHILE '(' Exp ')' Instr              { $$ = makeNode(While);
                                               addChild($$, $3);

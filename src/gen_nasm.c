@@ -276,6 +276,17 @@ static void write_neg(const Table* globals, const FunctionCollection* collection
                       const Function* fun, const Node* tree);
 
 /**
+ * @brief Write nasm code to handle if and else statement
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun function where the 'if' is computed
+ * @param tree head node with the 'If' label
+ */
+static void write_if(const Table* globals, const FunctionCollection* collection,
+                     const Function* fun, const Node* tree);
+
+/**
  * @brief Push on stack the number store in tree
  * 
  * @param tree 
@@ -300,6 +311,17 @@ static void write_character(const Node* tree);
  */
 static void write_tree(const Table* globals, const FunctionCollection* collection,
                        const Function* fun, const Node* tree);
+
+/**
+ * @brief Write bloc of instruction
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun function where the instructions are performed
+ * @param tree node to write
+ */
+static void write_instructions(const Table* globals, const FunctionCollection* collection,
+                               const Function* fun, const Node* tree);
 
 /**
  * @brief Write all function declarations and their code
@@ -328,7 +350,7 @@ static int create_file(char* output) {
         output[strlen(output) - 4] = '\0';
     }
     char filename[64];
-    snprintf(filename, 64, "obj/%s.asm", output);
+    snprintf(filename, 64, "%s.asm", output);
 
     out = fopen(filename, "w");
     return out != NULL;
@@ -697,6 +719,35 @@ static void write_neg(const Table* globals, const FunctionCollection* collection
                  nlabel, ncontinue, nlabel, ncontinue);
 }
 
+static void write_if(const Table* globals, const FunctionCollection* collection,
+                     const Function* fun, const Node* tree) {
+    fprintf(out, "\n\t; evaluation d'un 'if'\n"
+                 "\t; evaluation de la condition\n");
+    
+    // evaluate condition
+    write_tree(globals, collection, fun, FIRSTCHILD(tree));
+    
+    int ncontinue = next_free_label();
+    int nelse = next_free_label();
+
+    fprintf(out, "\n\t; evaluation de la condition du if\n"
+                 "\tpop \trax\n"
+                 "\tcmp \trax, 0\n"
+                 "\tje  \telse%d\n",
+                 nelse);
+    
+    // instruction inside the if
+    write_instructions(globals, collection, fun, SECONDCHILD(tree));
+    
+    fprintf(out, "\tjmp \tcontinue%d\n"
+                 "\telse%d:\n", ncontinue, nelse);
+
+    // instruction inside the else
+    write_instructions(globals, collection, fun, THIRDCHILD(tree));
+
+    fprintf(out, "\tcontinue%d:\n", ncontinue);
+}
+
 static void write_num(const Node* tree) {
     fprintf(out, "\n\t; lecture d'entier\n"
                  "\tpush\t%d\n",
@@ -742,7 +793,22 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
         case And: write_and(globals, collection, fun, tree); return;
         case Or: write_or(globals, collection, fun, tree); return;
         case Negation: write_neg(globals, collection, fun, tree); return;
+        case If: write_if(globals, collection, fun, tree); return;
+        case Else: write_instructions(globals, collection, fun, FIRSTCHILD(tree));
         default: return;
+    }
+}
+
+static void write_instructions(const Table* globals, const FunctionCollection* collection,
+                               const Function* fun, const Node* tree) {
+    if (!tree) return;
+    if (tree->label == SuiteInstr) {
+        tree = FIRSTCHILD(tree);
+    }
+
+    for (; tree;) {
+        write_tree(globals, collection, fun, tree);
+        tree = tree->nextSibling;
     }
 }
 
@@ -757,11 +823,7 @@ static void write_functions(const Table* globals, const FunctionCollection* coll
         head_instr = FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node)));
         write_function(fun);
 
-
-        for (; head_instr;) {
-            write_tree(globals, collection, fun, head_instr);
-            head_instr = head_instr->nextSibling;
-        }
+        write_instructions(globals, collection, fun, head_instr);
         write_function_exit();
         
         decl_fonct_node = decl_fonct_node->nextSibling;
