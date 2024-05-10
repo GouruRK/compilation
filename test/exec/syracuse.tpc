@@ -1,0 +1,34 @@
+void print_n(int n) {
+    putint(n);
+    putchar('\n');
+}
+
+void print_vol(int n) {
+    putchar('v');
+    putchar('o');
+    putchar('l');
+    putchar(':');
+    putchar(' ');
+    print_n(n);
+}
+
+int syracuse(int n) {
+    print_n(n);
+
+    if (n <= 1) {
+        return 0;
+    }
+    if (!(n % 2)) {
+        return syracuse(n / 2) + 1;
+    } 
+    return syracuse(3*n + 1) + 1;
+}
+
+int main(void) {
+    int vol, n;
+
+    n = getint();
+    vol = syracuse(n);
+    print_vol(vol);
+    return 0;
+}

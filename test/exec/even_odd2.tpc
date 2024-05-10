@@ -1,0 +1,33 @@
+void even(void) {
+    putchar('p');
+    putchar('a');
+    putchar('i');
+    putchar('r');
+    putchar('\n');
+}
+
+void odd(void) {
+    putchar('i');
+    putchar('m');
+    putchar('p');
+    putchar('a');
+    putchar('i');
+    putchar('r');
+    putchar('\n');
+}
+
+void print_parity(int n) {
+    if (n) {
+        odd();
+        return;
+    }
+    even();
+}
+
+int main(void) {
+    int r;
+
+    r = getint();
+    print_parity(r % 2);
+    return 0;
+}

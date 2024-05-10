@@ -1,0 +1,29 @@
+void even(void) {
+    putchar('p');
+    putchar('a');
+    putchar('i');
+    putchar('r');
+    putchar('\n');
+}
+
+void odd(void) {
+    putchar('i');
+    putchar('m');
+    putchar('p');
+    putchar('a');
+    putchar('i');
+    putchar('r');
+    putchar('\n');
+}
+
+int main(void) {
+    int r;
+
+    r = getint();
+    if (r % 2 == 0) {
+        even();
+    } else {
+        odd();
+    }
+    return 0;
+}

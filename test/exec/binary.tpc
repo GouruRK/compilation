@@ -1,0 +1,17 @@
+void bin(int n) {
+    if (!n) {
+        return;
+    }
+    bin(n / 2);
+    if (n % 2) {
+        putchar('1');
+    } else {
+        putchar('0');
+    }
+}
+
+int main(void) {
+    bin(getint());
+    putchar('\n');
+    return 0;
+}

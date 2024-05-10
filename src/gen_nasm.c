@@ -350,7 +350,7 @@ static int create_file(char* output) {
         output[strlen(output) - 4] = '\0';
     }
     char filename[64];
-    snprintf(filename, 64, "%s.asm", output);
+    snprintf(filename, 64, "obj/%s.asm", output);
 
     out = fopen(filename, "w");
     return out != NULL;
@@ -440,16 +440,16 @@ static void write_div_mod(const Table* globals, const FunctionCollection* collec
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     if(tree->val.ident[0] == '/') {
         fprintf(out, "\n\t; division\n"
-                     "\tmov \trdx, 0\n"
-                     "\tpop \trcx\n"
+                     "\tmov \trdx, 0\t; initialise le reste\n"
+                     "\tpop \trcx\t; diviseur\n"
                      "\tpop \trax\n"
                      "\tidiv\trcx\n"
                      "\tpush\trax\n");
     } else if(tree->val.ident[0] == '%') {
         fprintf(out, "\n\t; modulo\n"
-                     "\tpop \trcx\n"
+                     "\tmov \trdx, 0\t; initialise le reste\n"
+                     "\tpop \trcx\t; diviseur\n"
                      "\tpop \trax\n"
-                     "\tmov \trdx, 0\n"
                      "\tidiv\trcx\n"
                      "\tpush\trdx\n");
     }
