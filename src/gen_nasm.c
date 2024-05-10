@@ -276,7 +276,7 @@ static void write_neg(const Table* globals, const FunctionCollection* collection
                       const Function* fun, const Node* tree);
 
 /**
- * @brief Write nasm code to handle if and else statement
+ * @brief Write nasm code to handle 'if' and 'else' statements
  * 
  * @param globals global's table
  * @param collection collection of function
@@ -285,6 +285,17 @@ static void write_neg(const Table* globals, const FunctionCollection* collection
  */
 static void write_if(const Table* globals, const FunctionCollection* collection,
                      const Function* fun, const Node* tree);
+
+/**
+ * @brief Write nasm code to handle the 'while' statement
+ * 
+ * @param globals global's table
+ * @param collection collection of function
+ * @param fun function where the 'while' is computed
+ * @param tree head node with the 'While' label
+ */
+static void write_while(const Table* globals, const FunctionCollection* collection,
+                        const Function* fun, const Node* tree);
 
 /**
  * @brief Push on stack the number store in tree
@@ -350,7 +361,7 @@ static int create_file(char* output) {
         output[strlen(output) - 4] = '\0';
     }
     char filename[64];
-    snprintf(filename, 64, "obj/%s.asm", output);
+    snprintf(filename, 64, "%s.asm", output);
 
     out = fopen(filename, "w");
     return out != NULL;
@@ -648,13 +659,13 @@ static void write_bool_transform(void) {
 
 static void write_and(const Table* globals, const FunctionCollection* collection,
                        const Function* fun, const Node* tree) {
+    int nlabel = next_free_label();
+    int ncontinue = next_free_label();
+
     fprintf(out, "\n\t; evaluation d'un 'et' (&&)\n"
                  "\n\t; evaluation du membre gauche\n");
 
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
-    
-    int nlabel = next_free_label();
-    int ncontinue = next_free_label();
 
     fprintf(out, "\n\t; evaluation du 'et' (&&)\n"
                  "\tpop \trax\n"
@@ -674,14 +685,19 @@ static void write_and(const Table* globals, const FunctionCollection* collection
 
 static void write_or(const Table* globals, const FunctionCollection* collection,
                      const Function* fun, const Node* tree) {
-    fprintf(out, "\n\t; evaluation d'un 'ou' (||)\n"
-                 "\n\t; evaluation du membre gauche\n");
-
-    write_tree(globals, collection, fun, FIRSTCHILD(tree));
-
     int nlabel = next_free_label();
     int ncontinue = next_free_label();
 
+    fprintf(out, "\n\t; evaluation d'un 'ou' (||)\n"
+                 "\n\t; evaluation du membre gauche\n");
+
+    // write condition
+    write_tree(globals, collection, fun, FIRSTCHILD(tree));
+
+    // transform non-boolean values to boolean
+    write_bool_transform();
+
+    // evaluate condition
     fprintf(out, "\n\t; evaluation du 'or' (||)\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 1\n"
@@ -692,6 +708,7 @@ static void write_or(const Table* globals, const FunctionCollection* collection,
                  "\tlabel%d:\n",
                  nlabel, ncontinue, nlabel);
     
+    // write the left part of the expression
     write_tree(globals, collection, fun, SECONDCHILD(tree));
 
     fprintf(out, "\tcontinue%d:\n", ncontinue);
@@ -700,12 +717,15 @@ static void write_or(const Table* globals, const FunctionCollection* collection,
 
 static void write_neg(const Table* globals, const FunctionCollection* collection,
                       const Function* fun, const Node* tree) {
-    fprintf(out, "\n\t; evaluation d'un 'non' (!)\n");
+    int ncontinue = next_free_label();
+    int nlabel = next_free_label();
+
+    fprintf(out, "\n\t; evaluation d'un 'non' (!)\n"
+                 "\t; label%d -> si 0 on met a 1\n"
+                 "\t; continue%d -> suite du code\n",
+                 nlabel, ncontinue);
 
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
-
-    int nlabel = next_free_label();
-    int ncontinue = next_free_label();
 
     fprintf(out, "\n\t; evaluation du 'non' (!)\n"
                  "\tpop \trax\n"
@@ -721,14 +741,16 @@ static void write_neg(const Table* globals, const FunctionCollection* collection
 
 static void write_if(const Table* globals, const FunctionCollection* collection,
                      const Function* fun, const Node* tree) {
+    int ncontinue = next_free_label();
+    int nelse = next_free_label();
+
     fprintf(out, "\n\t; evaluation d'un 'if'\n"
-                 "\t; evaluation de la condition\n");
+                 "\t; continue%d -> code apres la condition\n"
+                 "\t; else%d -> code du else\n", 
+                 ncontinue, nelse);
     
     // evaluate condition
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
-    
-    int ncontinue = next_free_label();
-    int nelse = next_free_label();
 
     fprintf(out, "\n\t; evaluation de la condition du if\n"
                  "\tpop \trax\n"
@@ -746,6 +768,34 @@ static void write_if(const Table* globals, const FunctionCollection* collection,
     write_instructions(globals, collection, fun, THIRDCHILD(tree));
 
     fprintf(out, "\tcontinue%d:\n", ncontinue);
+}
+
+static void write_while(const Table* globals, const FunctionCollection* collection,
+                        const Function* fun, const Node* tree) {
+    int ncontinue = next_free_label();
+    int nhead = next_free_label();
+
+    fprintf(out, "\n\t; evaluation d'un 'while'\n"
+                 "\t; continue%d -> code apres un while\n"
+                 "\t; head%d -> tete de boucle\n"
+                 "\thead%d:\n",
+                 ncontinue, nhead, nhead);
+
+    // evaluate condition
+    write_tree(globals, collection, fun, FIRSTCHILD(tree));
+
+    fprintf(out, "\n\t; evaluation de la condition du while\n"
+                 "\tpop \trax\n"
+                 "\tcmp \trax, 0\n"
+                 "\tje  \tcontinue%d\t;\n",
+                 ncontinue);
+    
+    // write while code
+    write_instructions(globals, collection, fun, SECONDCHILD(tree));
+
+    fprintf(out, "\tjmp \thead%d\n"
+                 "\tcontinue%d:\n",
+                 nhead, ncontinue);
 }
 
 static void write_num(const Node* tree) {
@@ -794,7 +844,8 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
         case Or: write_or(globals, collection, fun, tree); return;
         case Negation: write_neg(globals, collection, fun, tree); return;
         case If: write_if(globals, collection, fun, tree); return;
-        case Else: write_instructions(globals, collection, fun, FIRSTCHILD(tree));
+        case Else: write_instructions(globals, collection, fun, FIRSTCHILD(tree)); return;
+        case While: write_while(globals, collection, fun, tree); return;
         default: return;
     }
 }
