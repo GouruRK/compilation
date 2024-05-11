@@ -613,10 +613,21 @@ static void param_access(const Function* fun, const Entry* entry,
 }
 
 static void global_access(const Entry* entry, const char* instr) {
-    fprintf(out, "\n\t; access to '%s' in globals\n"
-                 "\tmov \trcx, globals\n"
-                 "\t%s\tqword [rcx + %d]\n",
-                 entry->name, instr, entry->address);
+    if (is_array(entry->type)) {
+        fprintf(out, "\n\t; assign to '%s' in locals\n"
+                     "\tpop \trcx\n"
+                     "\timul\trcx, 8\n"
+                     "\tmov \trax, globals\n"
+                     "\tadd \trax, %d\n"
+                     "\tadd \trax, rcx\n"
+                     "\t%s\tqword [rax]\n",
+                     entry->name, entry->address, instr);
+    } else {
+        fprintf(out, "\n\t; access to '%s' in globals\n"
+                     "\tmov \trcx, globals\n"
+                     "\t%s\tqword [rcx + %d]\n",
+                     entry->name, instr, entry->address);
+    }
 }
 
 static void write_load_ident(const Table* globals, const FunctionCollection* collection,

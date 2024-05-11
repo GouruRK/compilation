@@ -1,0 +1,17 @@
+int main(void) {
+    int tab[20];
+
+    tab[1] = 1;
+    tab[2] = 2;
+    tab[3] = 3;
+    tab[4] = 4;
+    tab[5] = 0;
+    tab[6] = 0;
+    tab[7] = 0;
+    tab[8] = 0;
+    tab[9] = 0;
+    tab[10] = 5;
+    tab[11] = 0;
+
+    return tab[tab[1] + tab[2] + tab[3] + tab[4]];
+}
