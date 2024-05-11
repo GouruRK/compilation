@@ -9,6 +9,7 @@ typedef struct  {
 } comp_op;
 
 #define BUFFER_SIZE 512
+#define DEFAULT_PATH "obj/"
 
 #define MIN(a, b) ((a) < (b) ? (a): (b))
 #define MAX(a, b) ((a) > (b) ? (a): (b))
@@ -198,6 +199,14 @@ static void write_parameters(const Table* globals, const FunctionCollection* col
 static void write_function_call(const Table* globals, const FunctionCollection* collection,
                                 const Function* fun, const Node* tree);
 
+static void local_access(const Function* fun, const Entry* entry, 
+                         const char* instr);
+
+static void param_access(const Function* fun, const Entry* entry,
+                         const char* instr);
+
+static void global_access(const Entry* entry, const char* instr);
+
 /**
  * @brief Write nasm code to get variables values on top of the stack
  * 
@@ -361,7 +370,7 @@ static int create_file(char* output) {
         output[strlen(output) - 4] = '\0';
     }
     char filename[64];
-    snprintf(filename, 64, "%s.asm", output);
+    snprintf(filename, 64, DEFAULT_PATH"%s.asm", output);
 
     out = fopen(filename, "w");
     return out != NULL;
@@ -521,25 +530,12 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     
     Entry* entry;
-    int index;
     if ((entry = get_entry(&fun->locals, FIRSTCHILD(tree)->val.ident))) {
-        fprintf(out, "\n\t; assignation to '%s'\n"
-                     "\tpop \tqword [rbp - %d]\n",
-                     entry->name, fun->parameters.offset + entry->address);
+        local_access(fun, entry, "pop ");
     } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
-        index = is_in_table(&fun->parameters, tree->val.ident);
-        if (index < 6) {
-            fprintf(out, "\n\t; assignation to '%s' after function call\n"
-                         "\tpop \tqword [rbp - %d]\n", entry->name, entry->address);
-        } else {
-            fprintf(out, "\n\t; assignation to '%s' before function call\n"
-                         "\tpop \tqword [rbp + %d]\n", entry->name, entry->address);
-        }
+        param_access(fun, entry, "pop ");
     } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
-        fprintf(out, "\n\t; assignation to '%s'\n"
-                     "\tmov \trcx, globals\n"
-                     "\tpop \tqword [rcx + %d]\n",
-                     entry->name, entry->address);
+        global_access(entry, "pop ");
     }
 
 }
@@ -576,28 +572,43 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
     }
 }
 
+static void local_access(const Function* fun, const Entry* entry, 
+                         const char* instr) {
+    fprintf(out, "\n\t; access to '%s' in locals\n"
+                 "\t%s\tqword [rbp - %d]\n",
+                 entry->name, instr, fun->parameters.offset + entry->address);
+}
+
+static void param_access(const Function* fun, const Entry* entry,
+                         const char* instr) {
+    int index = is_in_table(&fun->parameters, entry->name);
+    if (index < 6) {
+        fprintf(out, "\n\t; access to '%s' in parameters\n"
+                     "\t%s\tqword [rbp - %d]\n",
+                     entry->name, instr, entry->address);
+    } else {
+        fprintf(out, "\n\t; access to '%s' in parameters\n"
+                     "\t%s\tqword [rbp + %d]\n",
+                     entry->name, instr, entry->address);
+    }
+}
+
+static void global_access(const Entry* entry, const char* instr) {
+    fprintf(out, "\n\t; access to '%s' in globals\n"
+                 "\tmov \trcx, globals\n"
+                 "\t%s\tqword [rcx + %d]\n",
+                 entry->name, instr, entry->address);
+}
+
 static void write_load_ident(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree) {
     Entry* entry;
-    int index;
     if ((entry = get_entry(&fun->locals, tree->val.ident))) {
-        fprintf(out, "\n\t; load local value store in %s\n"
-                     "\tpush\tqword [rbp - %d]\n",
-                     entry->name, fun->parameters.offset + entry->address);
+        local_access(fun, entry, "push");
     } else if ((entry = get_entry(&fun->parameters, tree->val.ident))) {
-        index = is_in_table(&fun->parameters, tree->val.ident);
-        if (index < 6) {
-            fprintf(out, "\n\t; load parameter value store in '%s' after function call\n"
-                         "\tpush\tqword [rbp - %d]\n", entry->name, entry->address);
-        } else {
-            fprintf(out, "\n\t; load parameter value store in '%s' before function call\n"
-                         "\tpush\tqword [rbp + %d]\n", entry->name, entry->address);
-        }
+        param_access(fun, entry, "push");
     } else if ((entry = get_entry(globals, tree->val.ident))) {
-        fprintf(out, "\n\t; load global value store in %s\n"
-                     "\tmov \trcx, globals\n"
-                     "\tpush\tqword [rcx + %d]\n",
-                     entry->name, entry->address);
+        global_access(entry, "push");
     } else {
         write_function_call(globals, collection, fun, tree);
     }
