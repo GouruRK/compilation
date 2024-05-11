@@ -525,16 +525,23 @@ static void write_function(Function* fun) {
 static void write_assign(const Table* globals, const FunctionCollection* collection,
                          const Function* fun, const Node* tree) {
     
-    // ! Uncomment this when arrays evaluation is done
-    // write_tree(globals, collection, fun, FIRSTCHILD(tree));
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     
     Entry* entry;
     if ((entry = get_entry(&fun->locals, FIRSTCHILD(tree)->val.ident))) {
+        if (is_array(entry->type)) {
+            write_tree(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
+        }
         local_access(fun, entry, "pop ");
     } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
+        if (is_array(entry->type)) {
+            write_tree(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
+        }
         param_access(fun, entry, "pop ");
     } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
+        if (is_array(entry->type)) {
+            write_tree(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
+        }
         global_access(entry, "pop ");
     }
 
@@ -574,9 +581,21 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
 
 static void local_access(const Function* fun, const Entry* entry, 
                          const char* instr) {
-    fprintf(out, "\n\t; access to '%s' in locals\n"
-                 "\t%s\tqword [rbp - %d]\n",
-                 entry->name, instr, fun->parameters.offset + entry->address);
+    if (is_array(entry->type)) {
+        fprintf(out, "\n\t; assign to '%s' in locals\n"
+                     "\tpop \trcx\n"
+                     "\timul\trcx, 8\n"
+                     "\tmov \trax, rbp\n"
+                     "\tsub \trax, %d\n"
+                     "\tsub \trax, rcx\n"
+                     "\t%s\tqword [rax]\n",
+                     entry->name, fun->parameters.offset + entry->address, instr);
+    } else {
+        fprintf(out, "\n\t; assign to '%s' in locals\n"
+                     "\t%s\tqword [rbp - %d]\n",
+                     entry->name, instr, fun->parameters.offset + entry->address);
+
+    }
 }
 
 static void param_access(const Function* fun, const Entry* entry,
@@ -602,6 +621,7 @@ static void global_access(const Entry* entry, const char* instr) {
 
 static void write_load_ident(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree) {
+    write_tree(globals, collection, fun, FIRSTCHILD(tree));
     Entry* entry;
     if ((entry = get_entry(&fun->locals, tree->val.ident))) {
         local_access(fun, entry, "push");
