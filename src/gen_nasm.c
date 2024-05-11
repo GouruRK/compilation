@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 typedef struct  {
     char* symbol;
@@ -9,7 +10,7 @@ typedef struct  {
 } comp_op;
 
 #define BUFFER_SIZE 512
-#define DEFAULT_PATH "obj/"
+#define DEFAULT_PATH ""
 
 #define MIN(a, b) ((a) < (b) ? (a): (b))
 #define MAX(a, b) ((a) > (b) ? (a): (b))
@@ -200,12 +201,12 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
                                 const Function* fun, const Node* tree);
 
 static void local_access(const Function* fun, const Entry* entry, 
-                         const char* instr);
+                         const char* instr, bool address);
 
 static void param_access(const Function* fun, const Entry* entry,
-                         const char* instr);
+                         const char* instr, bool address);
 
-static void global_access(const Entry* entry, const char* instr);
+static void global_access(const Entry* entry, const char* instr, bool address);
 
 /**
  * @brief Write nasm code to get variables values on top of the stack
@@ -532,17 +533,17 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
         if (is_array(entry->type)) {
             write_tree(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
         }
-        local_access(fun, entry, "pop ");
+        local_access(fun, entry, "pop ", false);
     } else if ((entry = get_entry(&fun->parameters, FIRSTCHILD(tree)->val.ident))) {
         if (is_array(entry->type)) {
             write_tree(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
         }
-        param_access(fun, entry, "pop ");
+        param_access(fun, entry, "pop ", false);
     } else if ((entry = get_entry(globals, FIRSTCHILD(tree)->val.ident))) {
         if (is_array(entry->type)) {
             write_tree(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
         }
-        global_access(entry, "pop ");
+        global_access(entry, "pop ", false);
     }
 
 }
@@ -580,8 +581,16 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
 }
 
 static void local_access(const Function* fun, const Entry* entry, 
-                         const char* instr) {
+                         const char* instr, bool address) {
     if (is_array(entry->type)) {
+        if (address) {
+            fprintf(out, "\n\t; on donne l'addresse de '%s'\n"
+                        "\tmov \trax, rbp\n"
+                        "\tsub \trax, %d\n"
+                        "\t%s\trax\n",
+                        entry->name, fun->parameters.offset + entry->address, instr);
+            return;
+        }
         fprintf(out, "\n\t; assign to '%s' in locals\n"
                      "\tpop \trcx\n"
                      "\timul\trcx, 8\n"
@@ -599,21 +608,72 @@ static void local_access(const Function* fun, const Entry* entry,
 }
 
 static void param_access(const Function* fun, const Entry* entry,
-                         const char* instr) {
+                         const char* instr, bool address) {
     int index = is_in_table(&fun->parameters, entry->name);
     if (index < 6) {
-        fprintf(out, "\n\t; access to '%s' in parameters\n"
-                     "\t%s\tqword [rbp - %d]\n",
-                     entry->name, instr, entry->address);
+        if (is_array(entry->type)) {
+            if (address) {
+                fprintf(out, "\n\t; assign address to '%s'\n"
+                             "\tmov \trax, rbp\n"
+                             "\tsub \trax, %d\n"
+                             "\t%s\tqword [rax]\n",
+                             entry->name, entry->address, instr);
+                return;
+            }
+            //! TODO: If an array come for a static variable, it's access method
+            //! changes 
+            fprintf(out, "\n\t; assign to '%s' in locals\n"
+                         "\tpop \trcx\n"
+                         "\timul\trcx, 8\n"
+                         "\tmov \trax, rbp\n"
+                         "\tsub \trax, %d\n"
+                         "\tmov \trdx, qword [rax]\n"
+                         "\tsub \trdx, rcx\n"
+                         "\t%s\tqword [rdx]\n",
+                         entry->name, entry->address, instr);
+        } else {
+            fprintf(out, "\n\t; access to '%s' in parameters\n"
+                         "\t%s\tqword [rbp - %d]\n",
+                         entry->name, instr, entry->address);
+        }
     } else {
-        fprintf(out, "\n\t; access to '%s' in parameters\n"
-                     "\t%s\tqword [rbp + %d]\n",
-                     entry->name, instr, entry->address);
+        if (is_array(entry->type)) {
+            if (address) {
+                fprintf(out, "\n\t; assign address to '%s'\n"
+                             "\tmov \trax, rbp\n"
+                             "\tadd \trax, %d\n"
+                             "\t%s\tqword [rax]\n",
+                             entry->name, entry->address, instr);
+                return;
+            }
+            //! TODO: If an array come for a static variable, it's access method
+            //! changes 
+            fprintf(out, "\n\t; access to '%s' in parameters\n"
+                         "\tpop \trcx\n"
+                         "\timul\trcx, 8\n"
+                         "\tmov \trax, rbp\n"
+                         "\tsub \trax, %d\n"
+                         "\tadd \trax, rcx\n"
+                         "\t%s\tqword [rax]\n",
+                         entry->name, entry->address, instr);
+        } else {
+            fprintf(out, "\n\t; access to '%s' in parameters\n"
+                        "\t%s\tqword [rbp + %d]\n",
+                        entry->name, instr, entry->address);
+        }
     }
 }
 
-static void global_access(const Entry* entry, const char* instr) {
+static void global_access(const Entry* entry, const char* instr, bool address) {
     if (is_array(entry->type)) {
+        if (address) {
+            fprintf(out, "\n\t; on donne l'addresse de '%s'\n"
+                         "\tmov \trcx, globals\n"
+                         "\tadd \trcx, %d\n"
+                         "\t%s\trcx\n",
+                         entry->name, entry->address, instr);
+            return;
+        }
         fprintf(out, "\n\t; assign to '%s' in locals\n"
                      "\tpop \trcx\n"
                      "\timul\trcx, 8\n"
@@ -635,11 +695,11 @@ static void write_load_ident(const Table* globals, const FunctionCollection* col
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
     Entry* entry;
     if ((entry = get_entry(&fun->locals, tree->val.ident))) {
-        local_access(fun, entry, "push");
+        local_access(fun, entry, "push", !FIRSTCHILD(tree));
     } else if ((entry = get_entry(&fun->parameters, tree->val.ident))) {
-        param_access(fun, entry, "push");
+        param_access(fun, entry, "push", !FIRSTCHILD(tree));
     } else if ((entry = get_entry(globals, tree->val.ident))) {
-        global_access(entry, "push");
+        global_access(entry, "push", !FIRSTCHILD(tree));
     } else {
         write_function_call(globals, collection, fun, tree);
     }
