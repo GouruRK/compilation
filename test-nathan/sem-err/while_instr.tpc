@@ -1,0 +1,8 @@
+void main(void) {
+    while (exp) {
+        while (1)
+            while (2 + 3 < a - c) {
+                return;
+            }
+    }
+}

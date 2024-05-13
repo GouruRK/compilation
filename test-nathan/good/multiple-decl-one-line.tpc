@@ -1,0 +1,3 @@
+int a,b,c,tab[10];
+char d,e,f, tab2[10];
+int main(void){}

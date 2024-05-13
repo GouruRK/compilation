@@ -1,0 +1,12 @@
+void main(void) {
+    int a, b;
+    a = 1;
+    b = a;
+    while (c || a) {
+        c = a == b;
+        if (a & b)
+            a = 0;
+        else
+            a = b != a;
+    }
+}

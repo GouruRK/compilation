@@ -1,0 +1,4 @@
+char eheh(void) {
+    /* test 
+    return 1;
+}

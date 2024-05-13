@@ -1,0 +1,13 @@
+char JspFactoryImpl(int b, char a) {
+    return 0&&1;
+}
+
+int main (void) {
+    int camarche, jsp;
+    if (jsp != 0) {
+        jsp = JspFactoryImpl();
+    } else {
+        camarche = 1;
+    }
+    return camarche;
+}

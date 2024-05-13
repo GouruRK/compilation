@@ -1,0 +1,17 @@
+int c;
+
+int add(int a, int b) {
+    a = a + b;
+    return a;
+}
+
+int mul(int a) {
+    return a * c;
+}
+
+int main(void) {
+    int a;
+    a = add(1,2);
+    c = 4;
+    return mul(a);
+}

@@ -1,0 +1,2 @@
+int tab[];
+int fct(void) {}

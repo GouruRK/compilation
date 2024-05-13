@@ -1,0 +1,5 @@
+int main(void) {
+    int a, tab[10];
+    a = tab;
+    return tab[tab];
+}

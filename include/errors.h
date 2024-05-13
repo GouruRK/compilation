@@ -79,7 +79,8 @@ void wrong_rtype_error(ErrorType type, const char* symbol,
  * @param line line where the error is triggered
  * @param col column where the error is triggered
  */
-void use_of_undeclare_symbol(const char* symbol, int line, int col);
+void use_of_undeclare_symbol(ErrorType type, const char* symbol, int line,
+                             int col);
 
 /**
  * @brief Print a message when a symbol is not used

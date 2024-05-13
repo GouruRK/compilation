@@ -1,0 +1,10 @@
+int main(void) {
+    int a;
+    a = 2;
+    if (a == 1) {
+        return 1;
+    } else if (a == 2) {
+        return 2;
+    } else
+        return 0;
+}

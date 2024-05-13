@@ -1,0 +1,17 @@
+int main(void) {
+    int i, j, tab[10], tab2[10];
+    i = 0;
+    j = 10;
+    while (i < 10) {
+        tab[i] = j * i;
+        j = j - 1;
+        tab2[j] = tab[i];
+        i = i + 1;
+    }
+    while (i > 0) {
+        i = i - 1;
+        putint(tab[i]);
+        putchar('\n');
+    }
+    return 0;
+}

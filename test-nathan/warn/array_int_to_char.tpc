@@ -1,0 +1,5 @@
+int main(void) {
+    int tab[1];
+    char a;
+    a = tab[0];
+}

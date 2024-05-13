@@ -1,0 +1,6 @@
+int main(void) {
+    int a;
+    a = 1234;
+    putint(a);
+    return 0;
+}

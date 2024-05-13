@@ -1,0 +1,4 @@
+int main(void) {
+    putchar('a');
+    putchar(100); // d
+}

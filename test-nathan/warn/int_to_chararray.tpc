@@ -1,0 +1,6 @@
+int test(char tab[]) {}
+
+int main(void) {
+    int tab[1];
+    test(tab);
+}

@@ -1,0 +1,5 @@
+int var;
+
+char test(void) {}
+
+int main(void) {}

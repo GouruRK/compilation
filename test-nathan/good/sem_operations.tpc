@@ -1,0 +1,19 @@
+int a, b;
+
+void test(void) {
+    b = 1;
+}
+
+int sub(int a, int b) {
+    return a - b;
+}
+
+int main(void) {
+    int b, c;
+    a = 1 + 2 + 3;   // 6
+    b = 1 * 2 * 3;   // 6
+    c = 10 / 2 % 5;  // 0
+    test();
+    putint(b);
+    return sub(a, b);
+}

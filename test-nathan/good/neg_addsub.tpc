@@ -1,0 +1,14 @@
+int a,b,c;
+char e;
+
+int testing_expressions(void) {
+    int sth_declared;
+    sth_declared = 1;
+    if (!+ sth_declared) 
+        return 1; 
+    return 0;
+}
+
+int main(void) {
+    return testing_expressions();
+}

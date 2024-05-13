@@ -1,0 +1,10 @@
+int tab[3];
+
+int use_tab(int tab[]) {
+    return tab[((1 + 2) * 0)];
+}
+
+int main(void) {
+    tab[0] = 3;
+    return use_tab(tab);
+}

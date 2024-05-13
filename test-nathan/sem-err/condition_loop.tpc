@@ -1,0 +1,10 @@
+/* This is a condition loop */
+int main(void) {
+    if (1) {
+        while(something)
+            if (something_else)
+                do_something();
+            else
+                do_something_else();
+    }
+}

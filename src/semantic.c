@@ -465,6 +465,10 @@ static int ident_type(const Table* globals, const FunctionCollection* collection
         return check_entry_use(globals, collection, fun, tree, entry);
     }
     Function* function = get_function(collection, tree->val.ident);
+    if (!function) {
+        use_of_undeclare_symbol(ERROR, tree->val.ident, tree->lineno, tree->colno);
+        return 0;
+    }
     return check_function_use(globals, collection, fun, tree, function);
 }
 
@@ -572,8 +576,12 @@ static int check_types(const Table* globals, const FunctionCollection* collectio
     Function* fun;
 
     for (; decl_fonct_node;) {
-        fun = get_function(collection,
-            SECONDCHILD(FIRSTCHILD(decl_fonct_node))->val.ident);
+        Node* node = SECONDCHILD(FIRSTCHILD(decl_fonct_node));
+        fun = get_function(collection, node->val.ident);
+        if (!fun) {
+            use_of_undeclare_symbol(ERROR, node->val.ident, node->lineno, node->colno);
+            return 0;
+        }
 
         head_instr = FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node)));
 

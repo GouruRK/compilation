@@ -1,0 +1,7 @@
+int test(char a, int b, char tab1[], int tab2[]) {
+    return 0;
+}
+
+int main(void) {
+    return 0;
+}

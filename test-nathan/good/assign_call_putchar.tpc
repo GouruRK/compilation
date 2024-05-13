@@ -1,0 +1,6 @@
+int main(void) {
+    char a;
+    a = 'a';
+    putchar(a);
+    return 0;
+}

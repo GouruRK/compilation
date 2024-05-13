@@ -10,7 +10,7 @@ typedef struct  {
 } comp_op;
 
 #define BUFFER_SIZE 512
-#define DEFAULT_PATH ""
+#define DEFAULT_PATH "obj/"
 
 #define MIN(a, b) ((a) < (b) ? (a): (b))
 #define MAX(a, b) ((a) > (b) ? (a): (b))

@@ -1,0 +1,4 @@
+// TODO NCN/AFE 100 : Did we have to check the parameters of the main function?
+int main(int argc, char argv[]) {
+    return 1;
+}

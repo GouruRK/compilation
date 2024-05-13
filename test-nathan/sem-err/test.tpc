@@ -1,0 +1,20 @@
+int i,a ;
+int b;
+char tab[3];
+
+int main(void) {
+    int i;
+    int tab[10];
+    i = 3;
+    if (1)
+        while (i > 0)
+            if (1)
+                return;
+    else;
+    tab[0] = 1;
+    tab[carotte(0 * 1) < truc] = 0;
+    days[5] = duration[(now + span) % 12];
+    return;
+}
+
+int fct(int machin[]) {}

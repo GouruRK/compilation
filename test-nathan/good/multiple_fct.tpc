@@ -1,0 +1,19 @@
+int add(int a, int b) {
+    return a + b;
+}
+
+int sub(int a, int b) {
+    int c;
+    c = a - b;
+    return c;
+}
+
+int main(void) {
+    int a, c;
+    int b, d;
+    a = 1;
+    b = 2;
+    c = add(a, b);
+    d = sub(a, b);
+    return c * d;
+}

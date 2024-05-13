@@ -1,0 +1,5 @@
+char test(void) {
+    if (a)
+        int a;
+    return 'a';
+}

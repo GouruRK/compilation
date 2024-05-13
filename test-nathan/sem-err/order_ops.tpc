@@ -1,0 +1,7 @@
+int main(void) {
+    n = a < b;
+    n = b > a;
+    n = a + b <= 3 - 4;
+    n = 0 >= c * 10 - a;
+    n = a <= (b < c < d) >= e <= f > g; 
+}

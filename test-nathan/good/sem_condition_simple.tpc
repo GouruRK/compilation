@@ -1,0 +1,39 @@
+int and(int a, int b) {
+    return a && b;
+}
+
+int or(int a, int b) {
+    return a || b;
+}
+
+int equals(int a, int b) {
+    return a == b;
+}
+
+int not_equals(int a, int b) {
+    return a != b;
+}
+
+int less_than(int a, int b) {
+    return a < b;
+}
+
+int greater_than(int a, int b) {
+    return a > b;
+}
+
+int less_than_or_equals(int a, int b) {
+    return a <= b;
+}
+
+int greater_than_or_equals(int a, int b) {
+    return a >= b;
+}
+
+int main(void) {
+    int x, y, z;
+    x = 10;
+    y = 10;
+    z = 0;
+    return x && y && z;
+}

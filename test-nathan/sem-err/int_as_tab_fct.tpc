@@ -1,0 +1,8 @@
+int test(int tab[]) {
+    return tab[0];
+}
+
+int main(void) {
+    test(1);
+    return 0;
+}

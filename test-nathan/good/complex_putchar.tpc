@@ -1,0 +1,34 @@
+int factorial(int n) {
+    if (n >= 1)
+        return factorial(n - 1) * n;
+    else
+        return 1;
+}
+
+void fillArray(int arr[], int size) {
+    int i;
+    i = 0;
+    while (i < size) {
+        putint(i);  // Affichage de l'indice (pour vérifier que le tableau est
+                    // bien rempli
+        arr[i] = factorial(i);
+        i = i + 1;
+    }
+}
+
+int main(void) {
+    int size;
+    int i;
+    int results[10];  // Déclaration d'un tableau de taille fixe
+    size = 10;
+    i = 0;
+
+    fillArray(results, size);
+
+    while (i < size) {
+        putint(results[i]);  // Affichage des résultats
+        i = i + 1;
+    }
+
+    return 0;
+}

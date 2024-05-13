@@ -83,8 +83,9 @@ void wrong_rtype_error(ErrorType type, const char* symbol, t_type current_type,
     print_error(&err);
 }
 
-void use_of_undeclare_symbol(const char* symbol, int line, int col) {
-    Error err = (Error){.type = ERROR,
+void use_of_undeclare_symbol(ErrorType type, const char* symbol, int line,
+                             int col) {
+    Error err = (Error){.type = type,
                         .line = line,
                         .col = col,
                         .has_line = true

@@ -1,0 +1,14 @@
+int tab[5];
+
+int main(void) {
+
+    int a, b, c, d;
+
+    a = 1 < tab;
+    b = tab == 1;
+    c = tab >= 1;
+    d = 1 != tab;
+
+    return (1 && tab) || tab;
+
+}

@@ -1,0 +1,16 @@
+// RETURN 1
+int main(void) {
+    int a, b, c;
+    a = 1;
+    b = 10;
+    c = 11;
+    if (a < b) {
+        if (b < c) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}

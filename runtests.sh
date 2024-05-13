@@ -4,7 +4,7 @@ RES=0
 NBFILES=0
 ACC=0
 
-sources=(test)
+sources=(test test-nico test-nathan)
 folders=(good sem-err syn-err warn)
 rvalues=(0 2 1 0)
 
@@ -26,7 +26,7 @@ run() {
 }
 
 
-for src in $sources; do
+for src in ${sources[@]}; do
     for i in "${!folders[@]}"; do
         run $src ${folders[$i]} ${rvalues[$i]}
     done

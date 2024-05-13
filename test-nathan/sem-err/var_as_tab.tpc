@@ -1,0 +1,6 @@
+int main(void) {
+    int i, a, b;
+    a = i[0];
+    b = i[i];
+    return 0;
+}

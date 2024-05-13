@@ -1,0 +1,11 @@
+int tab[5];
+
+int get(int tab[]) {
+    return tab[0];
+}
+
+int main(void) {
+    get(tab);
+
+    return tab;
+}

@@ -1,0 +1,14 @@
+int add(int a, int b) {
+    a = a + b;
+    return a;
+}
+
+int neg(int a) {
+    return -a;
+}
+
+int main(void) {
+    int a;
+    a = add(1, 2);
+    return neg(a);
+}

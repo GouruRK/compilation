@@ -1,0 +1,17 @@
+int use_tab3(int tab[]) {
+    return tab[0];
+}
+
+int use_tab2(int tab[]) {
+    return use_tab3(tab);
+}
+
+int use_tab(int tab[]) {
+    return use_tab2(tab);
+}
+
+int main(void) {
+    int tab[10];
+    tab[0] = 42;
+    return use_tab(tab);
+}

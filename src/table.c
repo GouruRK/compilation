@@ -392,21 +392,28 @@ static int check_used(Table* globals, Function* fun, FunctionCollection* coll, N
     if (!node) return 1;
 
     if (node->label == Ident) {
+        // check if there is a child, so ident can whenever be an array or a function
+        if (FIRSTCHILD(node)) {
+            // definitively a function
+            if (FIRSTCHILD(node)->label == NoParametres || FIRSTCHILD(node)->label == ListExp) {
+                Function* f = get_function(coll, node->val.ident);
+                if (!f) {
+                    use_of_undeclare_symbol(WARNING, node->val.ident, node->lineno, node->colno);
+                } else {
+                    if (f->decl_line != node->lineno) {
+                        f->is_used = true;
+                    }
+                }
+                return 1;
+            }
+        }
         Entry* entry = find_entry(globals, fun, node->val.ident);
         if (!entry) {
-            Function* f = get_function(coll, node->val.ident);
-            if (!f) {
-                use_of_undeclare_symbol(node->val.ident, node->lineno, node->colno);
-                return 0;
-            } else {
-                if (f->decl_line != node->lineno) {
-                    f->is_used = true;
-                }
-            }
-        } else {
-            if (entry->decl_line != node->lineno) {
-                entry->is_used = true;
-            }
+            use_of_undeclare_symbol(ERROR, node->val.ident, node->lineno, node->colno);
+            return 0;
+        }
+        if (entry->decl_line != node->lineno) {
+            entry->is_used = true;
         }
     }
     if (!check_used(globals, fun, coll, FIRSTCHILD(node))) return 0;

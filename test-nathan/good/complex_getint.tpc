@@ -1,0 +1,83 @@
+// TODO AFE / NCN 200 : Revoir comportement du premier getchar avec la
+// comparaison dans le main
+
+int getPositiveInt(void) {
+    int num;
+    num = getint();
+    if (num <= 0) {
+        putchar('E');  // Print 'E' for error
+        putchar('\n');
+        return 0;  // Error code for non-positive integer
+    }
+    return num;
+}
+
+void printCharXTimes(void) {
+    char c;
+    int count;
+    int i;
+    putchar('P');  // Prompt for character
+    putchar(':');
+    putchar(' ');
+    c = getchar();
+
+    putchar('N');  // Prompt for number
+    putchar(':');
+    putchar(' ');
+    count = getPositiveInt();
+
+    if (count == 0) {
+        return;  // Early exit if error in number input
+    }
+
+    i = 0;
+    while (i < count) {
+        putchar(c);
+        i = i + 1;
+    }
+    putchar('\n');  // New line after finishing printing
+}
+
+int main(void) {
+    int running;
+    char option;
+    running = 1;
+    while (running) {
+        putchar('M');  // Show menu prompt
+        putchar(':');
+        putchar(' ');
+        option = getchar();
+
+        if (option == '1') {
+            printCharXTimes();
+        } else if (option == '2') {
+            putchar('G');  // Goodbye message
+            putchar('o');
+            putchar('o');
+            putchar('d');
+            putchar('b');
+            putchar('y');
+            putchar('e');
+            putchar('\n');
+            running = 0;  // Stop the program
+        } else {
+            putchar('I');  // Invalid option
+            putchar('n');
+            putchar('v');
+            putchar('a');
+            putchar('l');
+            putchar('i');
+            putchar('d');
+            putchar(' ');
+            putchar('o');
+            putchar('p');
+            putchar('t');
+            putchar('i');
+            putchar('o');
+            putchar('n');
+            putchar('\n');
+        }
+    }
+
+    return 0;
+}

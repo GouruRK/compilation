@@ -1,0 +1,12 @@
+int main(void) {
+    int tab[5];
+    int tab2[3];
+    int a;
+
+    tab = tab2;
+    tab2 = 5;
+    a = tab;
+
+    return 0;
+
+}

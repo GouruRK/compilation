@@ -1,0 +1,9 @@
+int rec(int a) {
+    if (a <= 0)
+        return 0;
+    return 1 + rec(a - 1);
+}
+
+int main(void) {
+    return rec(3);
+}

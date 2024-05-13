@@ -1,0 +1,13 @@
+int main(void) {
+    int a;
+    a = putchar('a');
+    putint(putint(1));
+    if (putint(1))
+        return 1;
+
+    putint(getchar(putint(putint(1))));
+
+    while (a) return 0;
+    while (putint(1)) return 1;
+    return putint(1);
+}

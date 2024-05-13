@@ -1,0 +1,13 @@
+int test(int a) {
+    return a;
+}
+
+int main(void) {
+    int a, b, c, tab[1];
+    c = 10;
+    b = 3 - 6;                  // -3
+    a = -b;                     // 3
+    a = a + b;                  // 0
+    tab[0] = +(a + b - c + a);  // -13
+    return tab[0];              // -13 (243)
+}

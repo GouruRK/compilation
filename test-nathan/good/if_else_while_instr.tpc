@@ -1,0 +1,27 @@
+int fct(int a) {
+    return a;
+}
+
+int main(void) {
+    int false, true, args[2];
+    int a;
+    false = 0;
+    true = 1;
+    args[0] = 2;
+    while (!false)
+        if (1) {
+            a = 0;
+        } else
+            a = 2;
+
+    if (1 + 2 == 3) 
+        while (true) {
+            a = a + 1;
+        }
+    else {
+        if (fct(args[0]) <= 2) {
+            return 1;
+        }
+    }
+    return 0;
+}
