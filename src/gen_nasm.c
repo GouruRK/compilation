@@ -861,7 +861,7 @@ static void write_if(const Table* globals, const FunctionCollection* collection,
                  nelse);
     
     // instruction inside the if
-    write_instructions(globals, collection, fun, SECONDCHILD(tree));
+    write_tree(globals, collection, fun, SECONDCHILD(tree));
     
     fprintf(out, "\tjmp \tcontinue%d\n"
                  "\telse%d:\n", ncontinue, nelse);
@@ -933,6 +933,7 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
     if (!tree) return;
     
     switch (tree->label) {
+        case SuiteInstr: write_instructions(globals, collection, fun, FIRSTCHILD(tree));
         case Assignation: write_assign(globals, collection, fun, tree); return;
         case Ident: write_load_ident(globals, collection, fun, tree); return;
         case Num: write_num(tree); return;

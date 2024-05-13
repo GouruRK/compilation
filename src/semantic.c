@@ -539,7 +539,7 @@ static int check_tree(const Table* globals, const FunctionCollection* collection
                       const Function* fun, Node* tree) {
     if (!tree) return 1;
     switch (tree->label) {
-        case SuiteInstr: return check_instructions(globals, collection, fun, tree);
+        case SuiteInstr: return check_instructions(globals, collection, fun, FIRSTCHILD(tree));
         case Assignation: return check_assignation_types(globals, collection, fun, tree);
         case Character: tree->type = set_type(tree->type, T_CHAR); return 1;
         case Num: tree->type = set_type(tree->type, T_INT); return 1;
@@ -557,9 +557,6 @@ static int check_tree(const Table* globals, const FunctionCollection* collection
 static int check_instructions(const Table* globals, const FunctionCollection* collection,
                                const Function* fun, Node* tree) {
     if (!tree) return 1;
-    if (tree->label == SuiteInstr) {
-        tree = FIRSTCHILD(tree);
-    }
 
     for (; tree;) {
         if (!check_tree(globals, collection, fun, tree)) {
