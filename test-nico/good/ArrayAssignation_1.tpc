@@ -1,0 +1,15 @@
+int main(void) {
+    int tab1[10], tab2[10];
+    int res;
+
+    tab1[0] = 6;
+    tab1[3] = 3;
+
+    tab2[3] = 2;
+
+    tab1[0] = 42;
+    tab2[0] = 43 + tab1[0];
+    tab1[0] = -tab2[tab1[3]] * 5;
+
+    return tab1[0];
+}

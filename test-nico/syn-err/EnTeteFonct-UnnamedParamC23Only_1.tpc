@@ -1,0 +1,3 @@
+int unused_params(int, int, char) {
+    return 0;
+}

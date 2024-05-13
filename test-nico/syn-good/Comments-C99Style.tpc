@@ -1,0 +1,9 @@
+// bonsoir ceci est un commentaire monoligne simple.
+
+// int SKYNET = 42; // Everyone lies, Skynet is nothing more than a int
+
+int main(void){ // After function definition
+}
+
+
+// End of file ->

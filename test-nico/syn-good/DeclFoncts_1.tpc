@@ -1,0 +1,5 @@
+int main(void) {return ;}
+int main_coucou(void) {return 1;}
+int main_byebye(void) {return 1;}
+int main_hasta_la_vista(void) {return 1;}
+int main_gouru(int a, char b, int c, char d, int e, char f, int g, char h) {return 1;}

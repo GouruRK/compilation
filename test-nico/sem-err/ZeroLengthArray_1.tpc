@@ -1,0 +1,9 @@
+// nb_errors=2
+// nb_warnings=0
+
+int tab1[0];
+
+int main(void) {
+    int tab2[0];
+    return tab1[0] + tab2[0];
+}

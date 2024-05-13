@@ -1,0 +1,22 @@
+/* gen-code-types.tpc */
+
+/* Test file for TPC */
+int somme, produit, quotient, reste, difference;
+char letter, digit, punct;
+int uppercase;
+
+int main(void) {
+    int local_a;
+    local_a = 2;
+    somme = 12;
+    produit = 24;
+    // quotient=24/12; // TODO : Erreur de type
+    letter = 'e';
+    digit = '0';
+    uppercase = letter + ('A' - 'a');
+    putchar(uppercase);
+    reste = getint();
+    // putchar('\n');
+    putint(reste);
+    return 0;
+}

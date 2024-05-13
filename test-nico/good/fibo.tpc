@@ -1,0 +1,19 @@
+int fifi(int a) {
+    if (a <= 1) {
+        return a;
+    }
+
+    return fifi(a - 1) + fifi(a - 2);
+}
+
+int main(void) {
+    int res, input;
+
+    input = getint();
+
+    res = fifi(input);
+
+    putint(res);
+
+    return 0;
+}

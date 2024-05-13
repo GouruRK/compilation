@@ -1,0 +1,69 @@
+void swap(int arr[], int a, int b) {
+    int temp;
+    temp = arr[a];
+    arr[a] = arr[b];
+    arr[b] = temp;
+
+    return;
+}
+
+int partition(int arr[], int low, int high) {
+    int pivot;
+    int i;
+    int j;
+
+    pivot = arr[high];
+    i = low - 1;
+    j = low;
+
+    while (j <= high - 1) {
+        if (arr[j] < pivot) {
+            i = i + 1;
+            swap(arr, i, j);
+        }
+        j = j + 1;
+    }
+    swap(arr, i + 1, high);
+    return i + 1;
+}
+
+void qsort_helper(int arr[], int low, int high) {
+    int pi;
+
+    if (low < high) {
+        pi = partition(arr, low, high);
+
+        qsort_helper(arr, low, pi - 1);
+        qsort_helper(arr, pi + 1, high);
+    }
+
+    return;
+}
+
+void qsort(int arr[], int size) {
+    qsort_helper(arr, 0, size - 1);
+
+    return;
+}
+
+int main(void) {
+    int arr[5];
+    int i;
+
+    arr[0] = 6;
+    arr[1] = 4;
+    arr[2] = 30;
+    arr[3] = 2;
+    arr[4] = 10;
+
+    qsort(arr, 5);
+
+    i = 0;
+    while (i < 5) {
+        putint(arr[i]);
+        putchar(' ');
+        i = i + 1;
+    }
+
+    return 0;
+}

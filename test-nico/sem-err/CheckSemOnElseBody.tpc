@@ -1,0 +1,17 @@
+// nb_warnings=1
+// nb_errors=1
+
+int main(void) {
+    char c;
+
+    c = 'A';
+
+    if (c == 'A') {
+        putchar(c);
+    }
+    else {
+        c = 12;
+        main(12);
+    }
+    return 0;
+}

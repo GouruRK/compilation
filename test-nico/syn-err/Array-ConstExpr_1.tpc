@@ -1,0 +1,4 @@
+int main(int argc, char argv) {
+    int tab[5 * 2];
+    return 0;
+}

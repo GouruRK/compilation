@@ -1,0 +1,9 @@
+// nb_warnings=0
+// nb_errors=1
+
+int a;
+int a;
+
+int main(void) {
+
+}

@@ -1,0 +1,7 @@
+// nb_errors=1
+// nb_warnings=0
+
+int main(void) {
+    int var;
+    return var[0];
+}

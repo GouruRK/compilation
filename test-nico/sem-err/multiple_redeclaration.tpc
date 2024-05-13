@@ -1,0 +1,26 @@
+// nb_warnings=0
+// nb_errors=5
+
+int main(void) {
+    int a, b, c;
+
+    int b; // Error: redeclaration of 'b'
+
+    int c[10]; // Error: redeclaration of 'c'
+
+    return 0;
+}
+
+int f(int a) {
+    int a; // Error: redeclaration of 'a'
+
+    return 0;
+}
+
+int g(int a, int b, int a[]) { // Error: redeclaration of 'a'
+    return 0;
+}
+
+int f(char c) { // Error: redefinition of function 'f'
+    return 0;
+}

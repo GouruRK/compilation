@@ -1,0 +1,6 @@
+// nb_warnings=0
+// nb_errors=2
+
+char main(char a) {
+    return '0';
+}

@@ -10,7 +10,7 @@ typedef struct  {
 } comp_op;
 
 #define BUFFER_SIZE 512
-#define DEFAULT_PATH "obj/"
+#define DEFAULT_PATH ""
 
 #define MIN(a, b) ((a) < (b) ? (a): (b))
 #define MAX(a, b) ((a) > (b) ? (a): (b))
@@ -933,7 +933,7 @@ static void write_tree(const Table* globals, const FunctionCollection* collectio
     if (!tree) return;
     
     switch (tree->label) {
-        case SuiteInstr: write_instructions(globals, collection, fun, FIRSTCHILD(tree));
+        case SuiteInstr: write_instructions(globals, collection, fun, FIRSTCHILD(tree)); return;
         case Assignation: write_assign(globals, collection, fun, tree); return;
         case Ident: write_load_ident(globals, collection, fun, tree); return;
         case Num: write_num(tree); return;

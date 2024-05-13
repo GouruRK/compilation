@@ -1,0 +1,11 @@
+int main(void) {
+    int tab[10];
+
+    int a, b;
+    a = tab[0];
+    b = 2;
+    
+    b = tab[2 * 5 * b];
+
+    return 0;
+}

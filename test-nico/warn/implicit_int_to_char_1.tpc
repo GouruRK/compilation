@@ -1,0 +1,12 @@
+// nb_warnings=1
+// nb_errors=0
+
+int main(void) {
+    char a;
+    int b;
+
+    a = 32770;
+    b = a; // int to char : implicit cast
+
+    return 0;
+}

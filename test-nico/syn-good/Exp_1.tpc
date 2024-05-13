@@ -1,0 +1,4 @@
+int main(void) {
+    int a, b;
+    return (a * ((((b / (32 - '2'))))) - 42 * a / b);
+}

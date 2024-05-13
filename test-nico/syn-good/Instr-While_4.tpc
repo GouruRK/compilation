@@ -1,0 +1,5 @@
+void iter(void) {
+    int a;
+    char c;
+    while (a * c + 1);
+}

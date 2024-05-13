@@ -1,0 +1,13 @@
+int f(int a) {
+    putchar('f');
+    return 0;
+}
+
+int main(void) {
+    int res;
+    res = ((5 + 2 * 3 && f(0)) || (f(1) - 20 + 20));
+
+    putint(res);
+
+    return 0;
+}

@@ -1,0 +1,7 @@
+// nb_warnings=1
+// nb_errors=0
+
+int main(void) {
+    putchar(32770);
+    return 0;
+}

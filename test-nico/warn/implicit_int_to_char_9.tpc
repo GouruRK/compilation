@@ -1,0 +1,12 @@
+// nb_warnings=1
+// nb_errors=0
+
+int f(int a, char b, int c, char d, int e, char f, int g, char h) {
+    return 0;
+}
+
+int main(void) {
+    int res;
+    res = f(32770, 'a', 32770, 'a', 32770, 'a', 32770, 32770); // 1 warning
+    return res;
+}

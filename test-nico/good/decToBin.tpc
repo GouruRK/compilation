@@ -1,0 +1,36 @@
+void afficher_binaire(int n) {
+    int i;
+    char binaire[32]; 
+    int quotient, reste;
+    i = 31; 
+
+    while (i >= 0) {
+        binaire[i] = '0';
+        i = i - 1;
+    }
+
+    i = 31; 
+
+    while (n > 0) {
+        reste = n % 2;
+        if (reste == 1) {
+            binaire[i] = '1'; 
+        }
+        n = n / 2; 
+        i = i - 1; 
+    }
+
+    i = 0;
+    while (i < 32) {
+        putchar(binaire[i]);
+        i = i + 1;
+    }
+    putchar('\n');
+}
+
+int main(void) {
+    int entier;
+    entier = getint(); 
+    afficher_binaire(entier);
+    return 0;
+}

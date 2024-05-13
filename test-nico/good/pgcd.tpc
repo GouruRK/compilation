@@ -1,0 +1,22 @@
+int pgcd(int a, int b) {
+    while (a != b) {
+        if (a > b) {
+            a = a - b;
+        } else {
+            b = b - a;
+        }
+    }
+    return a;
+}
+
+int main(void) {
+    int a;
+    int b;
+    int result;
+
+    a = 12;
+    b = 18;
+
+    result = pgcd(a, b);
+    return result;
+}

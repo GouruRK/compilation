@@ -1,0 +1,14 @@
+// nb_warnings=0
+// nb_errors=1
+
+int main(void) {
+    return 0;
+}
+
+int f(int a) {
+    return a;
+}
+
+int f(int b) {
+    return b;
+}

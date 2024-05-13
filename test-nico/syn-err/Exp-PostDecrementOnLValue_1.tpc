@@ -1,0 +1,4 @@
+int expr (void) {
+    int a;
+    return a--;
+}

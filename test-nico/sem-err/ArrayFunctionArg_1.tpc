@@ -1,0 +1,11 @@
+// nb_warnings=0
+// nb_errors=1
+
+int f(int tab[]) {
+    return 0;
+}
+
+int main(void) {
+    int var[10];
+    return f(f(var));
+}

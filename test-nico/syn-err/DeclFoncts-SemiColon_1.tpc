@@ -1,0 +1,4 @@
+int main(void) {return 1;};
+int main_coucou(void) {return 1;};
+int main_byebye(void) {return 1;};
+int main_hasta_la_vista(void) {return 1;};

@@ -1,0 +1,14 @@
+// nb_errors=1
+// nb_warnings=0
+
+void f(void) {
+    return;
+}
+
+int main(void) {
+    int f;
+    int res;
+    res = 2 + f();
+
+    return 0;
+}

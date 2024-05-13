@@ -1,0 +1,14 @@
+// nb_warnings=1
+// nb_errors=1
+
+int main(void) {
+    char c;
+
+    c = 'A';
+
+    if (c == 'A') {
+        c = 12; // Error: Incompatible types in assignment (int, char)
+        main(12); // Warning: Too many arguments in function call
+    }
+    return 0;
+}

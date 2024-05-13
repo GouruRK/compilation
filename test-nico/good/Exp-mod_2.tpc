@@ -1,0 +1,4 @@
+int main(void) {
+    return -10 % 4; // (char) -2 == 254
+}
+

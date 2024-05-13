@@ -1,0 +1,5 @@
+void iter(void) {
+    while (1) {
+        putchar('c');
+    }
+}
