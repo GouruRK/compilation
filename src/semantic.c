@@ -175,8 +175,11 @@ static int check_cond_type(const Table* globals, const FunctionCollection* colle
  * @param fun current function
  * @param tree head node of the instruction
  */
-static int check_instruction(const Table* globals, const FunctionCollection* collection,
+static int check_tree(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, Node* tree);
+
+static int check_instructions(const Table* globals, const FunctionCollection* collection,
+                              const Function* fun, Node* tree);
 
 /**
  * @brief Main function for checking types
@@ -252,8 +255,8 @@ static void search_unused_symbols(const Table* globals,
 
 static int check_assignation_types(const Table* globals, const FunctionCollection* collection,
                                     const Function* fun, Node* tree) {
-    if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
-    if (!check_instruction(globals, collection, fun, SECONDCHILD(tree))) return 0;
+    if (!check_tree(globals, collection, fun, FIRSTCHILD(tree))) return 0;
+    if (!check_tree(globals, collection, fun, SECONDCHILD(tree))) return 0;
 
     t_type t_dest = FIRSTCHILD(tree)->type;
     t_type t_value = SECONDCHILD(tree)->type;
@@ -296,7 +299,7 @@ static int check_return_type(const Table* globals, const FunctionCollection* col
         }
 
         // check return expression
-        if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
+        if (!check_tree(globals, collection, fun, FIRSTCHILD(tree))) return 0;
         
         // assigning the return type
         child_type = FIRSTCHILD(tree)->type;
@@ -332,7 +335,7 @@ static int check_parameters(const Table* globals, const FunctionCollection* coll
     for (i = 0; head != NULL && i < called->parameters.cur_len; i++) {
         
         // if there is an error while checking sub-expression
-        if (!check_instruction(globals, collection, fun, head)) return 0;
+        if (!check_tree(globals, collection, fun, head)) return 0;
         
         entry = called->parameters.array[i];
 
@@ -399,7 +402,7 @@ static int check_entry_use(const Table* globals, const FunctionCollection* colle
         // if its an array
         if (is_array(entry->type)) {
             // check if the sub-expression is an integer to access the array
-            if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
+            if (!check_tree(globals, collection, fun, FIRSTCHILD(tree))) return 0;
 
             if (FIRSTCHILD(tree)->type != T_INT && FIRSTCHILD(tree)->type != T_CHAR) {
                 incorrect_array_access(entry->name, FIRSTCHILD(tree)->type,
@@ -467,8 +470,8 @@ static int ident_type(const Table* globals, const FunctionCollection* collection
 
 static int check_arithm_type(const Table* globals, const FunctionCollection* collection,
                               const Function* fun, Node* tree) {
-    if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
-    if (!check_instruction(globals, collection, fun, SECONDCHILD(tree))) return 0;
+    if (!check_tree(globals, collection, fun, FIRSTCHILD(tree))) return 0;
+    if (!check_tree(globals, collection, fun, SECONDCHILD(tree))) return 0;
     
     t_type ltype = FIRSTCHILD(tree)->type;
     if (tree->label == AddSub) {
@@ -507,21 +510,36 @@ static int check_arithm_type(const Table* globals, const FunctionCollection* col
 }
 
 static int check_cond_type(const Table* globals, const FunctionCollection* collection,
-                            const Function* fun, Node* tree) {
-    if (!check_instruction(globals, collection, fun, FIRSTCHILD(tree))) return 0;
+                           const Function* fun, Node* tree) {
+    // check conditions
+    if (!check_tree(globals, collection, fun, FIRSTCHILD(tree))) return 0;
     if (FIRSTCHILD(tree)->type != T_INT && FIRSTCHILD(tree)->type != T_CHAR) {
         invalid_condition(FIRSTCHILD(tree)->type, tree->lineno,
                           tree->colno);
         return 0;
     }
+
+    // check code block in if of while
+    if (!check_instructions(globals, collection, fun, SECONDCHILD(tree))) {
+        return 0;
+    }
+
+    if (tree->label == If) {
+        // check for else
+        if (!check_instructions(globals, collection, fun, THIRDCHILD(tree))) {
+            return 0;
+        }
+    }
+
     return 1;
 }
 
 // tree is the first instruction of the function
-static int check_instruction(const Table* globals, const FunctionCollection* collection,
-                              const Function* fun, Node* tree) {
-    if (!tree) return 1;    
+static int check_tree(const Table* globals, const FunctionCollection* collection,
+                      const Function* fun, Node* tree) {
+    if (!tree) return 1;
     switch (tree->label) {
+        case SuiteInstr: return check_instructions(globals, collection, fun, tree);
         case Assignation: return check_assignation_types(globals, collection, fun, tree);
         case Character: tree->type = set_type(tree->type, T_CHAR); return 1;
         case Num: tree->type = set_type(tree->type, T_INT); return 1;
@@ -531,8 +549,25 @@ static int check_instruction(const Table* globals, const FunctionCollection* col
         case Or: case And: case Negation:
         case DivStar: case AddSub: return check_arithm_type(globals, collection, fun, tree);
         case If: case While: return check_cond_type(globals, collection, fun, tree);
+        case Else: return check_instructions(globals, collection, fun, FIRSTCHILD(tree));
         default: return 1;
     }
+}
+
+static int check_instructions(const Table* globals, const FunctionCollection* collection,
+                               const Function* fun, Node* tree) {
+    if (!tree) return 1;
+    if (tree->label == SuiteInstr) {
+        tree = FIRSTCHILD(tree);
+    }
+
+    for (; tree;) {
+        if (!check_tree(globals, collection, fun, tree)) {
+            return 0;
+        }
+        tree = tree->nextSibling;
+    }
+    return 1;
 }
 
 static int check_types(const Table* globals, const FunctionCollection* collection, Node* tree) {
@@ -545,12 +580,10 @@ static int check_types(const Table* globals, const FunctionCollection* collectio
 
         head_instr = FIRSTCHILD(SECONDCHILD(SECONDCHILD(decl_fonct_node)));
 
-        for (; head_instr;) {
-            if (!check_instruction(globals, collection, fun, head_instr)) {
-                return 0;
-            }
-            head_instr = head_instr->nextSibling;
+        if (!check_instructions(globals, collection, fun, head_instr)) {
+            return 0;
         }
+
         decl_fonct_node = decl_fonct_node->nextSibling;
     }
     return 1;

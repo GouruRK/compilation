@@ -1,0 +1,6 @@
+int main(void) {
+    int a, array[10];
+
+    if (1)      
+        a = array;
+}

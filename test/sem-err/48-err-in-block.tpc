@@ -1,0 +1,11 @@
+int main(void) {
+    int a, array[10];
+
+    {
+        {
+            {
+                a = array;
+            }
+        }
+    }
+}
