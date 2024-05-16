@@ -6,6 +6,7 @@
 ;   un int
 
 ; Registres utilisés
+; r11: nombre de characteres lus
 ; r12: flag si le nombre entré est négatif
 ; r13: stocke le résultat temporaire
 ; rax: valeurs de retour de 'getchar' et de 'getint'
@@ -15,13 +16,15 @@ getint:
     mov     rbp, rsp        ; rbp = rsp
 
     ; On sauvegarde les registres non volatils
+    push    r11
     push    r12
     push    r13
 
     call    getchar         ; récupère le premier character
 
-    mov     r13, 0          ; Initialise le résultat
+    mov     r11, 0          ; Initialise la longueur du nombre
     mov     r12, 0          ; Initialise les flags
+    mov     r13, 0          ; Initialise le résultat
     
     cmp     rax, '-'
     jne     check_gint      ; rax n'est pas '-', c'est donc un nombre. On passe directement à la conversion 
@@ -45,6 +48,7 @@ convert_gint:
     imul    r13, 10        ; r13 *= 10
     sub     rax, '0'       ; rax = int(rax)
     add     r13, rax       ; r13 += rax
+    inc     r11            ; r11++ 
     jmp     next_char_gint
 
 final_gint:
@@ -57,12 +61,13 @@ final_gint:
 
 quit_gint:
     ; Détermine quelle sortie appeler en cas d'erreur et de sortie correcte
-    cmp     r13, 0
+    cmp     r11, 0
     je      exit_failure_gint
     
     ; On restaure les registres non volatils
     pop     r13
     pop     r12
+    pop     r11
 
     mov     rsp, rbp       ; restore stack
     pop     rbp

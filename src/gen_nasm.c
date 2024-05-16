@@ -513,7 +513,7 @@ static void write_function(Function* fun) {
     
     fprintf(out, "\n\t; On met les paramètres sur la pile\n");
 
-    for (int i = 0; i < fun->parameters.cur_len; i++) {
+    for (int i = 0; i < fun->parameters.cur_len && param_registers[i]; i++) {
         fprintf(out, "\tpush\t%s\n", param_registers[i]);
     }
 
