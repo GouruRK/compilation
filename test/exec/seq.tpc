@@ -1,0 +1,15 @@
+void seq(int n) {
+    int i;
+
+    i = 0;
+
+    while (i < n) {
+        putint(i);
+        putchar('\n');
+        i = i + 1;
+    }
+}
+
+int main(void) {
+    seq(10);
+}

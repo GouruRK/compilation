@@ -6,6 +6,6 @@ int fibo(int n) {
 }
 
 int main(void) {
-    putint(fibo(10));
+    putint(fibo(10)); // affiche 55
     return 0;
 }

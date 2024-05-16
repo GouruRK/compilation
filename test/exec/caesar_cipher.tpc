@@ -1,0 +1,103 @@
+void caesar_cipher(char message[], int key) {
+    int i;
+    i = 0;
+    while (message[i] != '\n') {
+        if (message[i] >= 'a' && message[i] <= 'z') {
+            message[i] = (message[i] - 'a' + key) % 26 + 'a';
+        } else if (message[i] >= 'A' && message[i] <= 'Z') {
+            message[i] = (message[i] - 'A' + key) % 26 + 'A';
+        }
+        i = i + 1;
+    }
+}
+
+void enter_message(void) {
+    putchar('E');
+    putchar('n');
+    putchar('t');
+    putchar('e');
+    putchar('r');
+    putchar(' ');
+    putchar('a');
+    putchar(' ');
+    putchar('m');
+    putchar('e');
+    putchar('s');
+    putchar('s');
+    putchar('a');
+    putchar('g');
+    putchar('e');
+    putchar(':');
+    putchar(' ');
+}
+
+void enter_key(void) {
+    putchar('E');
+    putchar('n');
+    putchar('t');
+    putchar('e');
+    putchar('r');
+    putchar(' ');
+    putchar('t');
+    putchar('h');
+    putchar('e');
+    putchar(' ');
+    putchar('k');
+    putchar('e');
+    putchar('y');
+    putchar(':');
+    putchar(' ');
+}
+
+void gets(char message[], int size) {
+    int i;
+    char c;
+    i = 0;
+    while (i < size - 1) {
+        c = getchar();
+        message[i] = c;
+        if (message[i] == '\n') {
+            message[i] = '\n';
+            return;
+        }
+        i = i + 1;
+    }
+    message[size - 1] = '\n';
+}
+
+/**
+ * @brief Read an integer from the standard input.
+ * This function put a character array into the standard input
+ * with a newline character at the end.
+ *
+ * @param message The message to be displayed to the user.
+ */
+void puts(char message[]) {
+    int i;
+    i = 0;
+    while (message[i] != '\n') {
+        putchar(message[i]);
+        i = i + 1;
+    }
+    putchar('\n');
+}
+
+int main(void) {
+    char message[100];
+    int key;
+
+    enter_message();
+    gets(message, 100);
+
+    enter_key();
+    key = getint();
+
+    caesar_cipher(message, key);
+
+    putchar('>');
+    putchar(' ');
+
+    puts(message);
+
+    return 0;
+}

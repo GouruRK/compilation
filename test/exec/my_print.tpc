@@ -1,0 +1,23 @@
+void print(char m[], int taille) {
+    int i;
+
+    i = 0;
+    while(i < taille) {
+        putchar(m[i]);
+        i = i + 1;
+    }
+    putchar('\n');
+}
+
+int main(void) {
+    char res[9];
+    int i;
+
+    i = 0;
+    while(i < 9) {
+        res[i] = 'a' + i;
+        i = i + 1;
+    }
+    print(res, 9);
+    return 0;
+}

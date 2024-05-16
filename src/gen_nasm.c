@@ -406,12 +406,13 @@ static void write_init(const FunctionCollection* coll, int globals_size) {
 
     // check if the builtin functions are ever used to not surcharge the
     // generated nasm
-    for (int i = 0; buitlin_name[i]; i++) {
+    /*for (int i = 0; buitlin_name[i]; i++) {
         if (get_function(coll, buitlin_name[i])->is_used) {
             write_buitlins();
             break;
         }
-    }
+    }*/
+    write_buitlins();
 
     fprintf(out, "\n_start:\n"
                  "\tcall\tmain\n");
@@ -461,16 +462,16 @@ static void write_div_mod(const Table* globals, const FunctionCollection* collec
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     if(tree->val.ident[0] == '/') {
         fprintf(out, "\n\t; division\n"
-                     "\tmov \trdx, 0\t; initialise le reste\n"
                      "\tpop \trcx\t; diviseur\n"
                      "\tpop \trax\n"
+                     "\tcqo \t; initialise le reste\n"
                      "\tidiv\trcx\n"
                      "\tpush\trax\n");
     } else if(tree->val.ident[0] == '%') {
         fprintf(out, "\n\t; modulo\n"
-                     "\tmov \trdx, 0\t; initialise le reste\n"
                      "\tpop \trcx\t; diviseur\n"
                      "\tpop \trax\n"
+                     "\tcqo \t; initialise le reste\n"
                      "\tidiv\trcx\n"
                      "\tpush\trdx\n");
     }
@@ -512,7 +513,7 @@ static void write_function(Function* fun) {
     
     fprintf(out, "\n\t; On met les paramètres sur la pile\n");
 
-    for (int i = MIN(fun->parameters.cur_len, 6) - 1; i > -1; i--) {
+    for (int i = 0; i < fun->parameters.cur_len; i++) {
         fprintf(out, "\tpush\t%s\n", param_registers[i]);
     }
 
@@ -914,6 +915,8 @@ static void write_character(const Node* tree) {
         sym = '\t';
     } else if (!strcmp(tree->val.ident, "'\\r'")) {
         sym = '\r';
+    } else if (!strcmp(tree->val.ident, "'\\''")) {
+        sym = '\'';
     }
 
     if (sym == -1) {

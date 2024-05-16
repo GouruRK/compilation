@@ -14,5 +14,5 @@ int c(void) {
 }
 
 int main(void) {
-    return a() || b() || c(); // affiche a et retourne 1
+    return a() && b() && c(); // affiche ab return 0
 }
