@@ -45,7 +45,7 @@ void                                { strcpy(yylval.ident, yytext); update_curso
 (\+|-)                              { strcpy(yylval.ident, yytext); update_cursor(); return ADDSUB; }
 (\*|\/|%)                           { strcpy(yylval.ident, yytext); update_cursor(); return DIVSTAR; }
 [;,(){}[\]]                         { prevcolno = colno; colno += yyleng; return yytext[0]; }
-'[^\\]'|'[\\][ntr'\\]'              { strcpy(yylval.carac, yytext); update_cursor(); return CHARACTER; }
+'[^\\]'|'[\\][0ntr'\\]'             { strcpy(yylval.carac, yytext); update_cursor(); return CHARACTER; }
 0                                   { yylval.num = atoi(yytext); update_cursor(); return NUM; }
 [1-9][0-9]*                         { yylval.num = atoi(yytext); update_cursor(); return NUM; }
 [a-zA-Z_][a-zA-Z_0-9]*              { strcpy(yylval.ident, yytext); update_cursor(); return IDENT; }

@@ -9,6 +9,7 @@
 
 #define NB_BUILTIN 4
 #define CALL_OFFSET 16
+#define N_REG_PARAM 6
 
 typedef struct {        // structure for builtin function
     char* name;         // function name
@@ -171,7 +172,7 @@ int compare_ident_fun(const void* ident, const void* fun) {
 }
 
 static int compute_size(t_type type, Node* node) {
-    int size = 8;               // size of int and char is 8 bytes 
+    int size = 8; // size of int and char is on 8 bytes 
     int additionnal = 1;
     if (is_array(node->type) && FIRSTCHILD(node)) {
         additionnal = FIRSTCHILD(node)->val.num;
@@ -180,20 +181,20 @@ static int compute_size(t_type type, Node* node) {
 }
 
 static int init_entry(Entry* entry, t_type type, Node* node) {
-    entry->decl_line = node->lineno;
-    entry->decl_col = node->colno;
-    entry->is_used = false;
-    entry->type = set_type(type, node->type);
-    strcpy(entry->name, node->val.ident);
+    entry->decl_line = node->lineno;            // set declaration line
+    entry->decl_col = node->colno;              // set declaration colunm
+    entry->is_used = false;                     // set as unused
+    entry->type = set_type(type, node->type);   // set its type
+    strcpy(entry->name, node->val.ident);       // set its name
 
-    entry->size = compute_size(type, node);
+    entry->size = compute_size(type, node);     // variable size
     if (!entry->size) {
         incorrect_array_decl(entry->name, node->lineno, node->colno);
         return 0;
     }
-
-    // address will be known when inserting the entry in a table
-    entry->address = -1;
+    entry->address = -1;                        // address to be known when
+                                                // inserting the entry into its
+                                                // table
     return 1;
 }
 
@@ -213,18 +214,24 @@ static int realloc_table(Table* table) {
 static int insert_entry(Table* table, Entry entry, int new_address) {
     if (!table) return 0;
     int index;
+
+    // check if an entry with the same name is already declared
     if ((index = is_in_table(table, entry.name)) != -1) {
+        // trigger a semantic error of type 'already_declared'
         already_declared_error(entry.name, entry.decl_line, entry.decl_col,
                                table->array[index].decl_col);
         return 0;
     }
 
+    // if there is no place remaining, realloc the array
     if (table->cur_len == table->max_len) {
         if (!realloc_table(table)) return 0;
     }
 
+    // set the entry address
     entry.address = new_address;
 
+    // update table properties
     table->total_bytes += entry.size;
     table->array[table->cur_len] = entry;
     table->cur_len++;
@@ -247,18 +254,28 @@ static int init_param_list(Table* table, Node* node) {
     }
     
     int new_address;
-    t_type type = get_type(node->val.ident);
     Entry entry;
+    t_type type = get_type(node->val.ident);
     if (!init_entry(&entry, type, FIRSTCHILD(node))) {
         return 0;
     }
 
-    if (table->cur_len < 6) {
+    // According to AMD64 call convetions in nasm, the first 6-th parameters
+    // must be given to function using 6 registers. Any other parameters must be
+    // given using the stack.
+    // Parameters address's change to adapt them if they are before or after
+    // the stack saving register 'rbp'. When a function is called, there is
+    // a 16 bytes offset 'CALL_OFFSET'
+
+    if (table->cur_len < N_REG_PARAM) {
+        // parameters 1 to 6
         new_address = table->total_bytes + entry.size;
         table->offset += entry.size;
-    } else if (table->cur_len == 6) {
+    } else if (table->cur_len == N_REG_PARAM) {
+        // 6-th parameter
         new_address = CALL_OFFSET;
     } else {
+        // 7-th parameter and go on
         new_address = table->array[table->cur_len - 1].address + entry.size;
     }
 
@@ -266,34 +283,43 @@ static int init_param_list(Table* table, Node* node) {
         return 0;
     }
     
+    // initiate the next parameter
     init_param_list(table, node->nextSibling);
     return 1;
 }
 
 static int init_function(Function* fun, Node* node, Table* globals) {
-    fun->is_used = false;
-    fun->decl_line = node->lineno;
-    fun->decl_col = node->colno;
-    assing_rtype(fun, node);
-    strcpy(fun->name, node->nextSibling->val.ident);
+    fun->is_used = false;                             // set function as unsused
+    fun->decl_line = node->lineno;                    // set declaration line
+    fun->decl_col = node->colno;                      // set declaration column
+    assing_rtype(fun, node);                          // set return type
+    strcpy(fun->name, node->nextSibling->val.ident);  // set name
 
     int index;
-    if ((index = is_in_table(globals, fun->name)) != -1) {  
+    // check if a function or a global variable with the same name is already 
+    // declared
+    if ((index = is_in_table(globals, fun->name)) != -1) {
+        // trigger a semantic error
         already_declared_error(fun->name, fun->decl_line, fun->decl_col,
                                globals->array[index].decl_line);
         return 0;
     }
 
+    // create table to store parameter entries
     if (!init_table(&fun->parameters)) {
+        // memory error while creating the parameters table
         return 0;
     }
     if (node->nextSibling->nextSibling->label == ListTypVar) {
-        if (!init_param_list(&fun->parameters, node->nextSibling->nextSibling->firstChild)) {
+        // insert parameter entries
+        if (!init_param_list(&fun->parameters,
+                             node->nextSibling->nextSibling->firstChild)) {
             free(&fun->parameters);
             return 0;
         }
     }
 
+    // create table to store local entries
     if (!init_table(&fun->locals)) {
         free(fun->parameters.array);
         return 0;
@@ -312,6 +338,8 @@ static int realloc_collection(FunctionCollection* collection) {
         memory_error();
         return 0;
     }
+
+    // update the collection's data 
     collection->funcs = temp;
     collection->max_len = next_len;
     return 1;
@@ -320,7 +348,9 @@ static int realloc_collection(FunctionCollection* collection) {
 static int insert_function(FunctionCollection* collection, Function fun) {
     if (!collection) return 0;
     int index;
+    // check if a function with the same name is already declared
     if ((index = is_in_collection(collection, fun.name)) != -1) {
+        // trigger a semantic error
         already_declared_error(fun.name, fun.decl_line, fun.decl_col,
                                collection->funcs[index].decl_line);
         return 0;
@@ -332,12 +362,14 @@ static int insert_function(FunctionCollection* collection, Function fun) {
         }
     }
 
+    // update collection's data
     collection->funcs[collection->cur_len] = fun;
     collection->cur_len++;
     return 1;
 }
 
-static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* node, Table* parameters) {
+static int decl_var(Table* table, FunctionCollection* coll, t_type type,
+                    Node* node, Table* parameters) {
     if (!node) {
         return 1;
     }
@@ -347,19 +379,23 @@ static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* n
     if (!init_entry(&entry, type, node)) {
         return 0;
     }
-    
-    if (parameters) { // locals
+
+    // declare a local variable
+    if (parameters) {
+        // check if the local entry is already declared
         if ((index = is_in_table(parameters, entry.name)) != -1) {
+            // trigger a semantic error
             already_declared_error(entry.name, entry.decl_line, entry.decl_col,
                                 parameters->array[index].decl_line);
             return 0;
         }
-
         if (!insert_entry(table, entry, table->total_bytes)) {
             return 0;
         }
-    } else { // globals
+    } else { // declare a global variable
+        // check if the global variable is already declared
         if ((index = is_in_collection(coll, entry.name)) != -1) {
+            // trigger a semantic error
             redefinition_of_builtin_functions(entry.name, entry.decl_line,
                                               entry.decl_col);
             return 0;
@@ -368,7 +404,6 @@ static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* n
             return 0;
         }
     }
-
     return decl_var(table, coll, type, node->nextSibling, parameters);
 }
 
@@ -421,6 +456,7 @@ static int check_used(Table* globals, Function* fun, FunctionCollection* coll, N
 }
 
 static int create_builtin_function(Function* fun, builtin spe) {
+    // set function default value
     *fun = (Function){.decl_col = -1,
                       .decl_line = -1,
                       .is_used = false,
@@ -431,6 +467,7 @@ static int create_builtin_function(Function* fun, builtin spe) {
         return 0;
     }
     if (spe.param != T_VOID) {
+        // set parameter default value
         Entry entry = (Entry){.address = -1,
                               .decl_col = -1,
                               .decl_line = -1,
@@ -466,12 +503,13 @@ static int insert_builtin_functions(FunctionCollection* coll) {
 int init_table(Table* table) {
     if (!table) return 0;
 
+    // set table default values
     table->total_bytes = 0;
     table->sorted = false;
     table->cur_len = 0;
     table->offset = 0;
-    table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
 
+    table->array = (Entry*)malloc(sizeof(Entry)*DEFAULT_LENGTH);
     if (!table->array) {
         memory_error();
         table->max_len = 0;
@@ -494,6 +532,8 @@ int is_in_table(const Table* table, const char ident[IDENT_LEN]) {
 
 Entry* find_entry(const Table* globals, const Function* fun, const char ident[IDENT_LEN]) {
     Entry* entry;
+
+    // check if the entry is known as a parameter, a local or a global variable
     if ((entry = get_entry(&fun->parameters, ident))) return entry;
     if ((entry = get_entry(&fun->locals, ident))) return entry;
     if ((entry = get_entry(globals, ident))) return entry;
@@ -504,8 +544,9 @@ Entry* get_entry(const Table* table, const char ident[IDENT_LEN]) {
     if (!table || !table->cur_len) return NULL;
 
     if (table->sorted) {
+        // uses stdlib bsearch function on lexical order
         return bsearch(ident, table->array, table->cur_len, sizeof(Entry),
-        compare_ident_entry);
+                       compare_ident_entry);
     } 
     int index = is_in_table(table, ident);
     return index == -1 ? NULL: &(table->array[index]);
@@ -514,16 +555,19 @@ Entry* get_entry(const Table* table, const char ident[IDENT_LEN]) {
 int init_function_collection(FunctionCollection* collection) {
     if (!collection) return 0;
 
+    // collection default values
     collection->sorted = false;
     collection->cur_len = 0;
-    collection->funcs = (Function*)malloc(sizeof(Function)*DEFAULT_LENGTH);
 
+    collection->funcs = (Function*)malloc(sizeof(Function)*DEFAULT_LENGTH);
     if (!collection->funcs) {
         memory_error();
         collection->max_len = 0;
         return 0;
     }
+
     collection->max_len = DEFAULT_LENGTH;
+    
     if (!insert_builtin_functions(collection)) {
         memory_error();
         free_collection(collection);

@@ -1,41 +1,144 @@
-# Projet Analyse Syntaxique
+# Projet Compilation
 Alves Rayan - Kies Rémy
 ___
 
-Création d'un analyseur lexical sur l'analyseur syntaxique donné, pouvant créer un arbre abstrait pour un sous langage du C.
+Création d'un compilateur pour le langage TPC, un langage dérivé du C. Transcrit TPC en assembleur pour être compilé depuis l'assembleur généré.
 
-- [Projet Analyse Syntaxique](#projet-analyse-syntaxique)
+- [Projet Compilation](#projet-compilation)
   - [Compilation](#compilation)
   - [Exécution](#exécution)
+  - [Fonctions builtins](#fonctions-builtins)
+  - [Structure d'un programme TPC](#structure-dun-programme-tpc)
+    - [Variables](#variables)
+    - [Arrays](#arrays)
+  - [Structure de controle](#structure-de-controle)
+  - [Gestion des données](#gestion-des-données)
   - [Tests](#tests)
-  - [Répartition du travail](#répartition-du-travail)
+  - [Changements par rapport au projet d'analyse syntaxique](#changements-par-rapport-au-projet-danalyse-syntaxique)
 
 
 ## Compilation
-
-Le projet se compile via la commande `make`. L'exécutable `tpcas` se trouve dans le dossier `./bin/`. 
+Le projet se compile via la commande `make`. L'exécutable `tpcc` se trouve dans le dossier `./bin/`. 
 
 ## Exécution
+Le compilateur s'exécute via `./bin/tpcc`. L'entrée par défaut est l'entrée standard. Un fichier peut être redirigé via les redirections de bash, ou en passant le nom d'un fichier en paramètre.
 
-L'analyseur syntaxique s'exécute via `./bin/tpcas`. L'entrée par défaut est l'entrée standard. Un fichier peut être redirigé via les redirections de bash, ou en passant le nom d'un fichier en paramètre.
+Le compilateur crée un fichier nasm dont le nom est le nom du fichier d'entrée ou `_anonymous.asm` si l'entrée standard est utilisée.
 
 Les options d'exécution sont :
-
 ```
-Usage: ./tpcas [OPTION...] FILE
+Usage: ./tpcc [OPTION...] FILE
 Check if syntax of given file is valid, according to the grammar defined in parser.y
+Input is a .tpc file and output is the generated nasm
 
 With no FILE, FILE is the standard input
 
-  -t, --tree    print abstract tree of the given file
-  -h, --help    display this help message and exit
+  -t, --tree            print abstract tree of the given file
+  -s, --symbols         print associated symbol tables
+  -h, --help            display this help message and exit
 ```
 
+## Fonctions builtins
+Le compilateur fourni quatre fonctions builtin pour gérées les entrées/sorties en nasm. Ces fonctions ne **doivent pas** être redéfinies en TPC, et une erreur sémantique sera déclenchée sinon.
+
+Les fonctions sont les suivantes:
+* `char getchar(void)`: *lit un charactère sur stdin:* [getchar](../builtin/getchar.asm)
+* `char getint(void)`: *lit un entier sur stdin: * [getint](../builtin/getint.asm)
+* `void putchar(char)`: *affiche un charactère sur stdout* [putchar](../builtin/putchar.asm)
+* `void putint(int)`: *affiche un entier sur stdout* [putint](../builtin/putint.asm)
+
+Ses fonctions sont définies en nasm et se trouvent dans le dossier `builint/`.
+
+## Structure d'un programme TPC
+Le langage TPC étant un sous langage du C, beaucoup de conventions et éléments de syntaxe sont les mêmes. C'est notamment le cas pour la déclaration des fonctions, les types, passage en paramètres, ...
+
+```c
+int fibo(int n) {
+    if (n <= 1) {
+        return n;
+    } 
+    return fibo(n - 1) + fibo(n - 2);
+}
+```
+*Exemple avec la suite de Fibonacci*
+
+### Variables
+Le langage TPC étant un sous langage du C, il suit certaines conventions ANSI du C, c'est à dire que toutes les variables locales doivent être déclarées avant les instructions des fonctions, et les globales doivent être déclarées avant les fonctions.
+
+```c
+int a, b, c;
+char d, e;
+
+int array[10], f;
+char chars[5];
+```
+*Exemple de déclaration de variables*
+
+On ne peut déclarer une variable et lui assigner une valeur à la même instruction, ni utiliser les opérateurs sur place type `i++` ou `i += 1`. Ainsi, l'incrémentation d'une variable se fera obligatoirement par la syntaxe `i = i + 1`.
+
+### Arrays
+On doit toujours déclarer un tableau en indiquant sa taille (non nulle). Aucune expression n'est tolérée dans la déclaration de la taille du tableau (donc les tailles négatives ne sont pas autorisées) et une taille nulle est une erreur sémantique.
+
+Lorsque les tableaux sont passsés en paramètres, leur taille ne doit pas être indiquées
+
+```c
+int add(int array[]) {
+  return array[0] + array[1];
+}
+
+int main(void) {
+  int array[2];
+
+  array[0] = 1;
+  array[1] = 2;
+  return add(array);
+}
+```
+*Exemple de déclaration de tableau et de passage en paramètre*
+
+## Structure de controle
+Les structures de contrôles sont:
+* `if-else`
+* `while`
+
+La syntaxe est la même qu'en C. Les bloc d'instructions sans `{...}` sont supportés
+
+```c
+int main(void) {
+  int i;
+
+  i = 0;
+  while (i < 5) {
+    putint(i);
+    i = i + 1;
+  }
+  return 0;
+}
+```
+
+Les conditions renseignées dans les structures de contrôles doivent être des `char`, des `int` ou des booléens (résultats de comparaisons ou opérations booléennes). Ainsi, le programme suivant déclenchera une erreur sémantique
+```c
+int main(void) {
+  int array[2];
+  if (array) 
+    return 1;
+  return 0;
+}
+```
+*Erreur sémantique*
+
+## Gestion des données
+Les deux types de données supportés sont les charactères `char` et les entiers `int`, ainsi que leur équivalents en array. Ces types sont codés sur 8 octets chacuns. **Toutes** les opérations sont castées en entier
+
+
+Il existe également `void` pour les fonctions ne retournant aucune valeur.
+
 ## Tests
+Le fichier `runtest.sh` permet de faire tourner le compilateur sur une batterie de tests. Il peut être exécuté directement (`./runtest.sh`, attention aux droits d'exécution !) ou via la commande `make test` (qui donne les droits d'exécution sur le fichier).
 
-Le fichier `runtest.sh` permet de faire tourner l'analyseur syntaxique sur une batterie de tests. Après s'être assuré que l'exécutable existe bien, et que l'utilisateur possède les droits d'exécution du fichier (`chmod +x runtest.sh`), l'analyseur syntaxique peut être testé en exécutant `runtest.sh`.
+Ces tests ne s'assurent pas de l'exécution, mais uniquement de la syntaxe et de la sémantique.
 
-**Attention** : Travaillant avec WSL et githubn et les espaces n'étants pas les mêmes entre Windows et Linux, il se peut que les retours à la ligne du script bash soient en CRLF et non en LF. Une rapide correction est d'ouvrir le fichier `runtests.sh` avec un éditeur et de le changer en sélectionnant tout le fichier.
+**Attention** : Travaillant avec WSL et Github et les espaces n'étants pas les mêmes entre Windows et Linux, il se peut que les retours à la ligne du script bash soient en CRLF et non en LF. Une rapide correction est d'ouvrir le fichier `runtests.sh` avec un éditeur et de le changer en sélectionnant tout le fichier.
 
 Exemple de runtime
 
@@ -59,8 +162,9 @@ Test sur test/syn-err/err_test9.tpc
 Successfuls tests : 51/51
 ```
 
-## Répartition du travail
-La quasi-totalité du projet a été fait à deux à l'exception le parsing des arguments en ligne de commande a été réalisé par Rémy
+## Changements par rapport au projet d'analyse syntaxique
+Suite au projet d'analyse syntaxique, beaucoup d'éléments ont changés. Tout d'abord, nous nous sommes apperçus que nous n'avions aucun label renseigné prorement sur les variables, fonctions, structures de contrôles, opérateurs ; et que les différents symboles étaient mal renseignés. C'est maintenant corrigé.
 
+De plus, il y avait plusieurs labels en Bison qui n'étaient pas renseignés car nous n'en voyons pas l'utilité, mais ils sont essentiels en compilation. Par exemple, pour déterminer si une fonction à des paramètres ou non.
 ___
 Alves Rayan - Kies Rémy
