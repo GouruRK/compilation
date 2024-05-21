@@ -27,15 +27,6 @@ static const char* buitlin_fcts[] = {
     NULL
 };
 
-// name of the builtin functions
-static const char* buitlin_name[] = {
-    "getchar",
-    "getint",
-    "putchar",
-    "putint",
-    NULL
-};
-
 // registers for arguments, according to AMD64 conventions
 static const char* param_registers[] = {
     "rdi",
@@ -404,14 +395,6 @@ static void write_init(const FunctionCollection* coll, int globals_size) {
                  "\tglobals: resb %d\n"
                  "\nsection .text\n", globals_size);
 
-    // check if the builtin functions are ever used to not surcharge the
-    // generated nasm
-    /*for (int i = 0; buitlin_name[i]; i++) {
-        if (get_function(coll, buitlin_name[i])->is_used) {
-            write_buitlins();
-            break;
-        }
-    }*/
     write_buitlins();
 
     fprintf(out, "\n_start:\n"
@@ -574,7 +557,13 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
     fprintf(out, "\n\t; appel de fonction\n"
                  "\tcall\t%s\n",
                  tree->val.ident);
-    
+
+    if (to_call->parameters.cur_len > 6) {
+        fprintf(out, "\n\t; on enleve les parametres qui sont restes dans la pile\n"
+                     "\tadd \trsp, %d\n",
+                     (to_call->parameters.cur_len - 6)*8);
+    }
+
     if (to_call->r_type != T_VOID) {
         fprintf(out, "\n\t; on push la valeur de retour\n"
                      "\tpush\trax\n");
