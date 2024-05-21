@@ -220,4 +220,10 @@ void line_error(ErrorType type, const char* message, int line, int col);
  */
 bool fatal_error(void);
 
+/**
+ * @brief Print compilation rapport
+ * 
+ */
+void print_rapport(void);
+
 #endif

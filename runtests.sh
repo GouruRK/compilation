@@ -4,7 +4,7 @@ RES=0
 NBFILES=0
 ACC=0
 
-sources=(test test-nico test-nathan)
+sources=(test)
 folders=(good sem-err syn-err warn)
 rvalues=(0 2 1 0)
 

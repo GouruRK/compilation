@@ -11,6 +11,9 @@
 #define CALL_OFFSET 16
 #define N_REG_PARAM 6
 
+#define SEM_ERR  0
+#define SEM_GOOD 1
+
 typedef struct {        // structure for builtin function
     char* name;         // function name
     t_type r_type;      // return type
@@ -116,7 +119,8 @@ static int insert_function(FunctionCollection* collection, Function fun);
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* node, Table* parameters);
+static int decl_var(Table* table, FunctionCollection* coll, t_type type,
+                    Node* node, Table* parameters);
 
 /**
  * @brief Initialise a collection of variables of differents types
@@ -126,7 +130,8 @@ static int decl_var(Table* table, FunctionCollection* coll, t_type type, Node* n
  * @return 1 if success
  *         0 if fail due to memory error
  */
-static int decl_vars(Table* table, FunctionCollection* coll, Node* node, Table* parameters);
+static int decl_vars(Table* table, FunctionCollection* coll, Node* node,
+                     Table* parameters);
 
 /**
  * @brief Get the type object from its identifiant
@@ -190,12 +195,12 @@ static int init_entry(Entry* entry, t_type type, Node* node) {
     entry->size = compute_size(type, node);     // variable size
     if (!entry->size) {
         incorrect_array_decl(entry->name, node->lineno, node->colno);
-        return 0;
+        return SEM_ERR;
     }
     entry->address = -1;                        // address to be known when
                                                 // inserting the entry into its
                                                 // table
-    return 1;
+    return SEM_GOOD;
 }
 
 static int realloc_table(Table* table) {
@@ -204,15 +209,15 @@ static int realloc_table(Table* table) {
     Entry* temp = realloc(table->array, sizeof(Entry)*next_len);
     if (!temp) {
         memory_error();
-        return 0;
+        return SEM_ERR;
     }
     table->array = temp;
     table->max_len = next_len;
-    return 1;
+    return SEM_GOOD;
 }
 
 static int insert_entry(Table* table, Entry entry, int new_address) {
-    if (!table) return 0;
+    if (!table) return SEM_ERR;
     int index;
 
     // check if an entry with the same name is already declared
@@ -220,12 +225,12 @@ static int insert_entry(Table* table, Entry entry, int new_address) {
         // trigger a semantic error of type 'already_declared'
         already_declared_error(entry.name, entry.decl_line, entry.decl_col,
                                table->array[index].decl_col);
-        return 0;
+        return SEM_ERR;
     }
 
     // if there is no place remaining, realloc the array
     if (table->cur_len == table->max_len) {
-        if (!realloc_table(table)) return 0;
+        if (!realloc_table(table)) return SEM_ERR;
     }
 
     // set the entry address
@@ -235,7 +240,7 @@ static int insert_entry(Table* table, Entry entry, int new_address) {
     table->total_bytes += entry.size;
     table->array[table->cur_len] = entry;
     table->cur_len++;
-    return 1;
+    return SEM_GOOD;
 }
 
 static void assing_rtype(Function* fun, Node* node) {
@@ -250,14 +255,14 @@ static void assing_rtype(Function* fun, Node* node) {
 
 static int init_param_list(Table* table, Node* node) {
     if (!node) {
-        return 1;
+        return SEM_GOOD;
     }
     
     int new_address;
     Entry entry;
     t_type type = get_type(node->val.ident);
     if (!init_entry(&entry, type, FIRSTCHILD(node))) {
-        return 0;
+        return SEM_ERR;
     }
 
     // According to AMD64 call convetions in nasm, the first 6-th parameters
@@ -280,12 +285,12 @@ static int init_param_list(Table* table, Node* node) {
     }
 
     if (!insert_entry(table, entry, new_address)) {
-        return 0;
+        return SEM_ERR;
     }
     
     // initiate the next parameter
     init_param_list(table, node->nextSibling);
-    return 1;
+    return SEM_GOOD;
 }
 
 static int init_function(Function* fun, Node* node, Table* globals) {
@@ -302,82 +307,83 @@ static int init_function(Function* fun, Node* node, Table* globals) {
         // trigger a semantic error
         already_declared_error(fun->name, fun->decl_line, fun->decl_col,
                                globals->array[index].decl_line);
-        return 0;
+        return SEM_ERR;
     }
 
     // create table to store parameter entries
     if (!init_table(&fun->parameters)) {
         // memory error while creating the parameters table
-        return 0;
+        return SEM_ERR;
     }
     if (node->nextSibling->nextSibling->label == ListTypVar) {
         // insert parameter entries
         if (!init_param_list(&fun->parameters,
                              node->nextSibling->nextSibling->firstChild)) {
             free(&fun->parameters);
-            return 0;
+            return SEM_ERR;
         }
     }
 
     // create table to store local entries
     if (!init_table(&fun->locals)) {
         free(fun->parameters.array);
-        return 0;
+        return SEM_ERR;
     }
 
     // add an offset of 8 to prevent going on the wrong stack address
     fun->locals.total_bytes = 8;
-    return 1;
+    return SEM_GOOD;
 }
 
 static int realloc_collection(FunctionCollection* collection) {
     int next_len = collection->max_len + DEFAULT_LENGTH;
 
-    Function* temp = (Function*)realloc(collection->funcs, sizeof(Function)*next_len);
+    Function* temp = (Function*)realloc(collection->funcs,
+                                        sizeof(Function)*next_len);
     if (!temp) {
         memory_error();
-        return 0;
+        return SEM_ERR;
     }
 
     // update the collection's data 
     collection->funcs = temp;
     collection->max_len = next_len;
-    return 1;
+    return SEM_GOOD;
 }
 
 static int insert_function(FunctionCollection* collection, Function fun) {
-    if (!collection) return 0;
+    if (!collection) return SEM_ERR;
     int index;
     // check if a function with the same name is already declared
     if ((index = is_in_collection(collection, fun.name)) != -1) {
         // trigger a semantic error
         already_declared_error(fun.name, fun.decl_line, fun.decl_col,
                                collection->funcs[index].decl_line);
-        return 0;
+        return SEM_ERR;
     }
 
     if (collection->cur_len == collection->max_len) {
         if (!realloc_collection(collection)) {
-            return 0;
+            return SEM_ERR;
         }
     }
 
     // update collection's data
     collection->funcs[collection->cur_len] = fun;
     collection->cur_len++;
-    return 1;
+    return SEM_GOOD;
 }
 
 static int decl_var(Table* table, FunctionCollection* coll, t_type type,
                     Node* node, Table* parameters) {
     if (!node) {
-        return 1;
+        return SEM_GOOD;
     }
 
     Entry entry;
     int index;
     if (!init_entry(&entry, type, node)) {
-        return 0;
+        return SEM_ERR;
     }
 
     // declare a local variable
@@ -387,10 +393,10 @@ static int decl_var(Table* table, FunctionCollection* coll, t_type type,
             // trigger a semantic error
             already_declared_error(entry.name, entry.decl_line, entry.decl_col,
                                 parameters->array[index].decl_line);
-            return 0;
+            return SEM_ERR;
         }
         if (!insert_entry(table, entry, table->total_bytes)) {
-            return 0;
+            return SEM_ERR;
         }
     } else { // declare a global variable
         // check if the global variable is already declared
@@ -398,10 +404,10 @@ static int decl_var(Table* table, FunctionCollection* coll, t_type type,
             // trigger a semantic error
             redefinition_of_builtin_functions(entry.name, entry.decl_line,
                                               entry.decl_col);
-            return 0;
+            return SEM_ERR;
         }
         if (!insert_entry(table, entry, table->total_bytes)) {
-            return 0;
+            return SEM_ERR;
         }
     }
     return decl_var(table, coll, type, node->nextSibling, parameters);
@@ -412,19 +418,21 @@ static t_type get_type(char ident[IDENT_LEN]) {
     return T_CHAR; 
 }
 
-static int decl_vars(Table* table, FunctionCollection* coll, Node* node, Table* parameters) {
+static int decl_vars(Table* table, FunctionCollection* coll, Node* node,
+                     Table* parameters) {
     if (!node) {
-        return 1;
+        return SEM_GOOD;
     }
     t_type type = get_type(node->val.ident);
     if (!decl_var(table, coll, type, FIRSTCHILD(node), parameters)) {
-        return 0;
+        return SEM_ERR;
     }
     return decl_vars(table, coll, node->nextSibling, parameters);
 }
 
-static int check_used(Table* globals, Function* fun, FunctionCollection* coll, Node* node) {
-    if (!node) return 1;
+static int check_used(Table* globals, Function* fun, FunctionCollection* coll,
+                      Node* node) {
+    if (!node) return SEM_GOOD;
 
     if (node->label == Ident) {
         // check if there is a child, so ident can whenever be an array or a function
@@ -433,25 +441,27 @@ static int check_used(Table* globals, Function* fun, FunctionCollection* coll, N
             if (FIRSTCHILD(node)->label == NoParametres || FIRSTCHILD(node)->label == ListExp) {
                 Function* f = get_function(coll, node->val.ident);
                 if (!f) {
-                    use_of_undeclare_symbol(WARNING, node->val.ident, node->lineno, node->colno);
+                    use_of_undeclare_symbol(WARNING, node->val.ident,
+                                            node->lineno, node->colno);
                 } else {
                     if (f->decl_line != node->lineno) {
                         f->is_used = true;
                     }
                 }
-                return 1;
+                return SEM_GOOD;
             }
         }
         Entry* entry = find_entry(globals, fun, node->val.ident);
         if (!entry) {
-            use_of_undeclare_symbol(ERROR, node->val.ident, node->lineno, node->colno);
-            return 0;
+            use_of_undeclare_symbol(ERROR, node->val.ident, node->lineno,
+                                    node->colno);
+            return SEM_ERR;
         }
         if (entry->decl_line != node->lineno) {
             entry->is_used = true;
         }
     }
-    if (!check_used(globals, fun, coll, FIRSTCHILD(node))) return 0;
+    if (!check_used(globals, fun, coll, FIRSTCHILD(node))) return SEM_ERR;
     return check_used(globals, fun, coll, node->nextSibling);
 }
 
@@ -464,7 +474,7 @@ static int create_builtin_function(Function* fun, builtin spe) {
                       };
     strcpy(fun->name, spe.name);
     if (!init_table(&fun->parameters)) {
-        return 0;
+        return SEM_ERR;
     }
     if (spe.param != T_VOID) {
         // set parameter default value
@@ -477,31 +487,31 @@ static int create_builtin_function(Function* fun, builtin spe) {
                               .type = spe.param};
         if (!insert_entry(&fun->parameters, entry, 0)) {
             free_table(&fun->parameters);
-            return 0;
+            return SEM_ERR;
         }
     }
     if (!init_table(&fun->locals)) {
         free_table(&fun->parameters);
-        return 0;
+        return SEM_ERR;
     }
-    return 1;
+    return SEM_GOOD;
 }
 
 static int insert_builtin_functions(FunctionCollection* coll) {
     for (int i = 0; i < NB_BUILTIN; i++) {
         Function fun;
         if (!create_builtin_function(&fun, builtin_funcs[i])) {
-            return 0;
+            return SEM_ERR;
         }
         if (!insert_function(coll, fun)) {
-            return 0;
+            return SEM_ERR;
         }
     }
-    return 1;
+    return SEM_GOOD;
 }
 
 int init_table(Table* table) {
-    if (!table) return 0;
+    if (!table) return SEM_ERR;
 
     // set table default values
     table->total_bytes = 0;
@@ -513,10 +523,10 @@ int init_table(Table* table) {
     if (!table->array) {
         memory_error();
         table->max_len = 0;
-        return 0;
+        return SEM_ERR;
     }
     table->max_len = DEFAULT_LENGTH;
-    return 1;
+    return SEM_GOOD;
 }
 
 int is_in_table(const Table* table, const char ident[IDENT_LEN]) {
@@ -530,7 +540,8 @@ int is_in_table(const Table* table, const char ident[IDENT_LEN]) {
     return -1;
 }
 
-Entry* find_entry(const Table* globals, const Function* fun, const char ident[IDENT_LEN]) {
+Entry* find_entry(const Table* globals, const Function* fun,
+                  const char ident[IDENT_LEN]) {
     Entry* entry;
 
     // check if the entry is known as a parameter, a local or a global variable
@@ -543,6 +554,7 @@ Entry* find_entry(const Table* globals, const Function* fun, const char ident[ID
 Entry* get_entry(const Table* table, const char ident[IDENT_LEN]) {
     if (!table || !table->cur_len) return NULL;
 
+    // choose the fastest method to find an entry
     if (table->sorted) {
         // uses stdlib bsearch function on lexical order
         return bsearch(ident, table->array, table->cur_len, sizeof(Entry),
@@ -553,7 +565,7 @@ Entry* get_entry(const Table* table, const char ident[IDENT_LEN]) {
 }
 
 int init_function_collection(FunctionCollection* collection) {
-    if (!collection) return 0;
+    if (!collection) return SEM_ERR;
 
     // collection default values
     collection->sorted = false;
@@ -563,20 +575,20 @@ int init_function_collection(FunctionCollection* collection) {
     if (!collection->funcs) {
         memory_error();
         collection->max_len = 0;
-        return 0;
+        return SEM_ERR;
     }
-
     collection->max_len = DEFAULT_LENGTH;
     
     if (!insert_builtin_functions(collection)) {
         memory_error();
         free_collection(collection);
-        return 0;
+        return SEM_ERR;
     }
-    return 1;
+    return SEM_GOOD;
 }
 
-int is_in_collection(const FunctionCollection* collection, const char ident[IDENT_LEN]) {
+int is_in_collection(const FunctionCollection* collection,
+                     const char ident[IDENT_LEN]) {
     if (!collection || !collection->cur_len) return -1;
 
     for (int i = 0; i < collection->cur_len; i++) {
@@ -587,10 +599,13 @@ int is_in_collection(const FunctionCollection* collection, const char ident[IDEN
     return -1;
 }
 
-Function* get_function(const FunctionCollection* collection, const char ident[IDENT_LEN]) {
+Function* get_function(const FunctionCollection* collection,
+                       const char ident[IDENT_LEN]) {
     if (!collection || !collection->cur_len) return NULL;
     
+    // choose the fastest method to find an entry
     if (collection->sorted) {
+        // uses stdlib bsearch function on lexical order
         return bsearch(ident, collection->funcs, collection->cur_len,
                        sizeof(Function), compare_ident_fun);
     }
@@ -614,14 +629,16 @@ void free_collection(FunctionCollection* collection) {
 }
 
 int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
+    // main function to create symbol tables
     static bool is_globals_done = false;
-
     if (!node) {
-        return 1;
+        return SEM_GOOD;
     }
 
     int err;
+    // declaration of variables
     if (node->label == DeclVars) {
+        // declaration of global variables
         if (!is_globals_done) {
             err = decl_vars(globals, collection, FIRSTCHILD(node), NULL);
             is_globals_done = true;
@@ -630,68 +647,58 @@ int create_tables(Table* globals, FunctionCollection* collection, Node* node) {
                             collection, FIRSTCHILD(node),
                             &(collection->funcs[collection->cur_len - 1].parameters));
         }
-        if (!err) return 0;
+        if (!err) return SEM_ERR;
         return create_tables(globals, collection, node->nextSibling);
-    } else if (node->label == DeclFonct) {
+    } else if (node->label == DeclFonct) { // declaration of function
         Function fun;
         if (!init_function(&fun, FIRSTCHILD(FIRSTCHILD(node)), globals)) {
-            return 0;
+            return SEM_ERR;
         }
 
         Node* head_decl_vars = FIRSTCHILD(FIRSTCHILD(SECONDCHILD(node)));
-
+        // insert local entries
         if (!decl_vars(&fun.locals, collection, head_decl_vars, &fun.parameters)) {
-            return 0;
+            return SEM_ERR;
         }
-        
+        // insert function in collection
         if (!insert_function(collection, fun)) {
-            return 0;
+            return SEM_ERR;
         }
-        
+        // check if any of the variables are defined before being use
         if (!check_used(globals, &fun, collection, SECONDCHILD(node))) {
-            return 0;
+            return SEM_ERR;
         }
-        
         return create_tables(globals, collection, node->nextSibling);
     }
-    if (!create_tables(globals, collection, FIRSTCHILD(node))) {
-        return 0;
-    }
-    return create_tables(globals, collection, node->nextSibling);
+    // continue to parse the tree
+    return create_tables(globals, collection, FIRSTCHILD(node)) &&
+           create_tables(globals, collection, node->nextSibling);
 }
 
 void print_table(Table table) {
     for (int i = 0; i < table.cur_len; i++) {
-        if (table.array[i].address >= 0) {
-            printf("type: %4s | decl_line: %3d | size: %5d | address: %05xx | array: %s | name: %s\n",
-                table.array[i].type == T_INT ? "int": "char",
-                table.array[i].decl_line, 
-                table.array[i].size,
-                table.array[i].address,
-                is_array(table.array[i].type) ? "true": "false",
-                table.array[i].name);
-        } else {
-            printf("type: %4s | decl_line: %3d | size: %5d | array: %s | name: %s\n",
-                table.array[i].type == T_INT ? "int": "char",
-                table.array[i].decl_line, 
-                table.array[i].size,
-                is_array(table.array[i].type) ? "true": "false",
-                table.array[i].name);
-        }
-
+        printf("type: %4s | decl_line: %3d | size: %5d | array: %s | name: %s\n",
+            table.array[i].type == T_INT ? "int": "char",
+            table.array[i].decl_line, 
+            table.array[i].size,
+            is_array(table.array[i].type) ? "true": "false",
+            table.array[i].name);
     }
 }
 
 void print_collection(FunctionCollection collection) {
     for (int i = 0; i < collection.cur_len; i++) {
+        // do not print builtin functions
         if (collection.funcs[i].decl_line == -1) {
-            continue; // do not print builtin functions
+            continue;
         }
         t_type type = collection.funcs[i].r_type;
         putchar('\n'); 
+        
         printf("%s %s() - Parameters:\n",
                 type == T_INT ? "int" : (type == T_CHAR ? "char": "void"),
                 collection.funcs[i].name);
+        
         print_table(collection.funcs[i].parameters);
 
         printf("%s %s() - Locals:\n",

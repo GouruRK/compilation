@@ -15,13 +15,6 @@ typedef struct {
 } Args;
 
 /**
- * @brief Fonction to do initialisation of arguments
- * 
- * @return Args 
- */
-Args init_args(void);
-
-/**
  * @brief Fonction to use arguments passed in command line
  * 
  * @param argc 

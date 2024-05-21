@@ -1,48 +1,47 @@
-/* tree.c */
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "tree.h"
 
-extern int lineno;       /* from lexer  */
-extern int colno;        /* from lexer  */
+extern int lineno;       // from lexer
+extern int colno;        // from lexer
 
 static const char *StringFromLabel[] = {
-    "if",
-    "else",
-    "while",
-    "return",
-    "type",
-    "void",
-    "and",
-    "or",
-    "eq",
-    "negation",
-    "order",
-    "addsub",
-    "divstar",
-    "character",
-    "num",
-    "ident",
-    "prog",
-    "declVars",
-    "declarateurs",
-    "decl_foncts",
-    "decl_fonct",
-    "en_tete_fonct",
-    "parametres",
-    "NoParametres",
-    "list_typ_var",
-    "corps",
-    "suiteInstr",
-    "instr",
-    "exp",
-    "lvalue",
-    "arguments",
-    "list_exp",
-    "assignation", 
-    "empty_instr"
+    [If] = "if",
+    [Else] = "else",
+    [While] = "while",
+    [Return] = "return",
+    [Type] = "type",
+    [Void] = "void",
+    [And] = "and",
+    [Or] = "or",
+    [Eq] = "eq",
+    [Negation] = "negation",
+    [Order] = "order",
+    [AddSub] = "addsub",
+    [DivStar] = "divstar",
+    [Character] = "character",
+    [Num] = "num",
+    [Ident] = "ident",
+    [Prog] = "prog",
+    [DeclVars] = "declVars",
+    [Declarateurs] = "declarateurs",
+    [DeclFoncts] = "decl_foncts",
+    [DeclFonct] = "decl_fonct",
+    [EnTeteFonct] = "en_tete_fonct",
+    [Parametres] = "parametres",
+    [NoParametres] = "no_parametres",
+    [ListTypVar] = "list_typ_var",
+    [Corps] = "corps",
+    [SuiteInstr] = "suiteInstr",
+    [Instr] = "instr",
+    [Exp] = "exp",
+    [LValue] = "lvalue",
+    [Arguments] = "arguments",
+    [ListExp] = "list_exp",
+    [Assignation] = "assignation", 
+    [EmptyInstr] = "empty_instr"
 };
 
 Node *makeNode(label_t label) {

@@ -12,7 +12,8 @@ char filename[64];
 static char* types[] = {
     [WARNING] = PURPLE "warning" RESET,
     [NOTE]    = CYAN "note" RESET,
-    [ERROR]   = RED "error" RESET
+    [ERROR]   = RED "error" RESET,
+    NULL
 };
 
 static int error_count[] = {
@@ -114,7 +115,8 @@ void unused_symbol_in_function(const char* function, const char* symbol,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
-             "unused symbol: '%s' in function '%s'", symbol, function);
+             "unused symbol: '%s' in function '%s'",
+             symbol, function);
     print_error(&err);
 }
 
@@ -201,9 +203,9 @@ void invalid_parameter_type(ErrorType type, const char* function,
                         .has_line = true
                         };
     snprintf(err.message, ERROR_LEN,
-             "incorrect parameter '%s' type while trying to call '%s': expected type"
-             " '%s', got '%s'", param_name, function, type_convert[expected],
-             type_convert[current]);
+             "incorrect parameter '%s' type while trying to call '%s': "
+             "expected type '%s', got '%s'",
+             param_name, function, type_convert[expected], type_convert[current]);
     print_error(&err);
 }
 
@@ -247,4 +249,12 @@ void line_error(ErrorType type, const char* message, int line, int col) {
 
 bool fatal_error(void) {
     return error_count[ERROR];
+}
+
+void print_rapport(void) {
+    printf("Execution rapport:\n"
+           "------------------\n");
+    for (int i = 0; types[i]; i++) {
+        printf("%-20s%d\n", types[i], error_count[i]);
+    }
 }
