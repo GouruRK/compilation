@@ -48,7 +48,7 @@ Le compilateur fourni quatre fonctions builtin pour gérées les entrées/sortie
 
 Les fonctions sont les suivantes:
 * `char getchar(void)`: *lit un charactère sur stdin:* [getchar](../builtin/getchar.asm)
-* `char getint(void)`: *lit un entier sur stdin: * [getint](../builtin/getint.asm)
+* `char getint(void)`: *lit un entier sur stdin:* [getint](../builtin/getint.asm)
 * `void putchar(char)`: *affiche un charactère sur stdout* [putchar](../builtin/putchar.asm)
 * `void putint(int)`: *affiche un entier sur stdout* [putint](../builtin/putint.asm)
 
