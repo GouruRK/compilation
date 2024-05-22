@@ -14,11 +14,16 @@ Création d'un compilateur pour le langage TPC, un langage dérivé du C. Transc
   - [Structure de controle](#structure-de-controle)
   - [Gestion des données](#gestion-des-données)
   - [Tests](#tests)
-  - [Changements par rapport au projet d'analyse syntaxique](#changements-par-rapport-au-projet-danalyse-syntaxique)
+  - [Difficultées rencontrées](#difficultées-rencontrées)
+    - [Héritage du projet d'Analyse Syntaxique](#héritage-du-projet-danalyse-syntaxique)
+    - [Les types en sémantique](#les-types-en-sémantique)
+    - [Blocs d'instructions](#blocs-dinstructions)
 
 
 ## Compilation
-Le projet se compile via la commande `make`. L'exécutable `tpcc` se trouve dans le dossier `./bin/`. 
+Le projet se compile via la commande `make`. L'exécutable `tpcc` se trouve dans le dossier `./bin/`.
+
+Il existe aussi les commandes `make clean` pour supprimer les fichiers `'.o'` et `make mrproper` pour nettoyer toute l'archive.
 
 ## Exécution
 Le compilateur s'exécute via `./bin/tpcc`. L'entrée par défaut est l'entrée standard. Un fichier peut être redirigé via les redirections de bash, ou en passant le nom d'un fichier en paramètre.
@@ -130,8 +135,7 @@ int main(void) {
 ## Gestion des données
 Les deux types de données supportés sont les charactères `char` et les entiers `int`, ainsi que leur équivalents en array. Ces types sont codés sur 8 octets chacuns. **Toutes** les opérations sont castées en entier
 
-
-Il existe également `void` pour les fonctions ne retournant aucune valeur.
+Il existe également `void` pour les fonctions ne retournant aucune valeur. On ne peut retourner un tableau d'entiers ou de charactères.
 
 ## Tests
 Le fichier `runtest.sh` permet de faire tourner le compilateur sur une batterie de tests. Il peut être exécuté directement (`./runtest.sh`, attention aux droits d'exécution !) ou via la commande `make test` (qui donne les droits d'exécution sur le fichier).
@@ -159,12 +163,56 @@ Test sur test/syn-err/err_test11.tpc
 Test sur test/syn-err/err_test8.tpc
 Test sur test/syn-err/err_test9.tpc
 
-Successfuls tests : 51/51
+Starting tests on test
+Test sur test/syn-err/1-empty-file.tpc
+Test sur test/syn-err/10-array-w-no-size.tpc
+
+Starting tests on test
+Test sur test/warn/1-assignation-type.tpc
+Test sur test/warn/2-cast-param.tpc
+Test sur test/warn/3-function-decl-after-use.tpc
+...
+
+Successfuls tests : 113/113
 ```
 
-## Changements par rapport au projet d'analyse syntaxique
+## Difficultées rencontrées
+
+### Héritage du projet d'Analyse Syntaxique
 Suite au projet d'analyse syntaxique, beaucoup d'éléments ont changés. Tout d'abord, nous nous sommes apperçus que nous n'avions aucun label renseigné prorement sur les variables, fonctions, structures de contrôles, opérateurs ; et que les différents symboles étaient mal renseignés. C'est maintenant corrigé.
 
 De plus, il y avait plusieurs labels en Bison qui n'étaient pas renseignés car nous n'en voyons pas l'utilité, mais ils sont essentiels en compilation. Par exemple, pour déterminer si une fonction à des paramètres ou non.
+
+### Les types en sémantique
+Au début de la vérification des types, on savait si une variable ou une expression était un entier, un charactère ou un tableau, mais impossible de savoir quel type de tableau. Pour pouvoir supporter ces informations supplémentaires, la représentation des types à changé en cours de projet pour utiliser des masks binaires
+
+```c
+#define T_NONE      0       // 0 << 0 - 0000 0001 
+#define T_INT       2       // 1 << 1 - 0000 0010 
+#define T_CHAR      4       // 1 << 2 - 0000 0100 
+#define T_VOID      8       // 1 << 3 - 0000 1000 
+#define T_ARRAY    16       // 1 << 4 - 0001 0000 
+#define T_FUNCTION 32       // 1 << 5 - 0010 0000 
+```
+*Extrait du fichier [types.h](../include/types.h)*
+
+### Blocs d'instructions
+Il nous a fallu un peu de temps avant de pouvoir gérer prorement ces différents blocs :
+
+```c
+if (...) {
+  ...
+} else {
+  ...
+}
+```
+et
+```c
+if (...)
+  ...
+else 
+  ...
+```
+Pour les gérer, nous avons du "déporter" une partie de notre boucle qui itère sur les instructions afin de pouvoir l'appeler depuis d'autres fonctions
 ___
 Alves Rayan - Kies Rémy

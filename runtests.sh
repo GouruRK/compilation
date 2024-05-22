@@ -9,7 +9,7 @@ folders=(good sem-err syn-err warn)
 rvalues=(0 2 1 0)
 
 run() {
-    echo "Starting tests on $1"
+    echo "Starting tests on $1/$2"
 
     for file in $1/$2/* ; do
         echo "Test sur $file"

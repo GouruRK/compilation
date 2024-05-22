@@ -10,7 +10,7 @@ BUILD_DIR=obj
 BIN_DIR=bin
 BUILTIN_DIR=builtin
 
-ZIP_TARGET=ProjetCompilationL3_ALVES_KIES.zip
+ARCHIVE_OUTPUT=ProjetCompilationL3_ALVES_KIES
 
 SOURCES=$(wildcard $(SRC_DIR)/*.c)
 SRC_OBJS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
@@ -49,8 +49,11 @@ mrproper: clean
 	rm -f bin/*
 
 zip: mrproper
-	rm -f $(ZIP_TARGET)
-	zip -r $(ZIP_TARGET) include/ src/ builtin/ makefile
+	rm -f $(ARCHIVE_OUTPUT).zip
+	zip -r $(ARCHIVE_OUTPUT).zip include/ src/ builtin/ makefile
+
+tar: mrproper
+	tar -czf $(ARCHIVE_OUTPUT).tar.gz --transform 's,^,$(ARCHIVE_OUTPUT)/,' builtin/ include/ rep/ src/ test/ makefile runtests.sh 
 
 test: $(BIN_DIR)/$(EXEC)
 	@chmod u+x runtests.sh

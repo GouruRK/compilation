@@ -69,42 +69,48 @@ int main(int argc, char* argv[]) {
     Node* AST = NULL;
     int res = parse(args, &AST, args.tree);
 
-    if (res == 0) {
-        // input was correctly parsed, proceed to the next step
-        init_error(args.name ? args.name: "stdin");
-
-        // initiate structures to check semantic and generate nasm
-        int err_globals, err_functions;
-        Table globals;
-        FunctionCollection functions;
-        err_globals = init_table(&globals);
-        err_functions = init_function_collection(&functions);
-
-        // error while initiating structures for semantic
-        if (!err_functions || !err_globals) {
-            goto exit_main;
-        }
-        // error while filling symbol tables
-        if (!create_tables(&globals, &functions, AST)) {
-            goto exit_main;
-        }
-        // print symbol tables
-        if (args.symbols) {
-            puts("globals:");
-            print_table(globals);
-            print_collection(functions);
-        }
-        // generating nasm if sematic is correct
-        if (check_sem(&globals, &functions, AST)) {
-            gen_nasm(args.name, &globals, &functions, AST);
-        }
-        // free allocated memory for semantic structures
-        free_collection(&functions);
-        free_table(&globals);
+    // input error
+    if (res) {
+        deleteTree(AST);
+        return res;
     }
-    goto exit_main;
-    exit_main:
+    // input was correctly parsed, proceed to the next step
+    init_error(args.name ? args.name: "stdin");
+
+    // initiate structures to check semantic and generate nasm
+    int err_globals, err_functions;
+    Table globals;
+    FunctionCollection functions;
+    err_globals = init_table(&globals);
+    err_functions = init_function_collection(&functions);
+
+    // error while initiating structures for semantic
+    if (!err_functions || !err_globals) {
         deleteTree(AST);
         print_rapport();
-        return fatal_error() ? SEMANTIC_ERROR: res;
+        return OTHER_ERROR;
+    }
+    // error while filling symbol tables
+    if (!create_tables(&globals, &functions, AST)) {
+        deleteTree(AST);
+        print_rapport();
+        return SEMANTIC_ERROR;
+    }
+    // print symbol tables
+    if (args.symbols) {
+        puts("globals:");
+        print_table(globals);
+        print_collection(functions);
+    }
+    // generating nasm if sematic is correct
+    if (check_sem(&globals, &functions, AST)) {
+        gen_nasm(args.name, &globals, &functions, AST);
+    }
+    // free allocated memory for semantic structures
+    free_collection(&functions);
+    free_table(&globals);
+
+    deleteTree(AST);
+    print_rapport();
+    return fatal_error() ? SEMANTIC_ERROR: res;
 }
