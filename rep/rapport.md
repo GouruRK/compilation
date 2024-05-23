@@ -8,6 +8,7 @@ Création d'un compilateur pour le langage TPC, un langage dérivé du C. Transc
   - [Compilation](#compilation)
   - [Exécution](#exécution)
   - [Fonctions builtins](#fonctions-builtins)
+  - [Valeurs de retour du compilateur](#valeurs-de-retour-du-compilateur)
   - [Structure d'un programme TPC](#structure-dun-programme-tpc)
     - [Variables](#variables)
     - [Arrays](#arrays)
@@ -18,6 +19,7 @@ Création d'un compilateur pour le langage TPC, un langage dérivé du C. Transc
     - [Héritage du projet d'Analyse Syntaxique](#héritage-du-projet-danalyse-syntaxique)
     - [Les types en sémantique](#les-types-en-sémantique)
     - [Blocs d'instructions](#blocs-dinstructions)
+    - [Arguments des fonctions](#arguments-des-fonctions)
 
 
 ## Compilation
@@ -54,6 +56,14 @@ Les fonctions sont les suivantes:
 
 Ses fonctions sont définies en nasm et se trouvent dans le dossier `builint/`.
 
+## Valeurs de retour du compilateur
+Lors de la traduction en NASM, plusieurs types d'erreurs peuvent se produire. Elles se traduisent par un message d'erreur ainsi qu'un code de retour :
+* `0` si pas d'erreur
+* `1` s'il y a une erreur syntaxique
+* `2` pour une erreur sémantique
+* `3` pour une erreur autre (paramètres en ligne de commande, allocation mémoire)
+* `5` erreur d'entrée-sortie (exemple dans getint si l'on donne un caractère non numérique autre que le signe '-')
+
 ## Structure d'un programme TPC
 Le langage TPC étant un sous langage du C, beaucoup de conventions et éléments de syntaxe sont les mêmes. C'est notamment le cas pour la déclaration des fonctions, les types, passage en paramètres, ...
 
@@ -84,7 +94,7 @@ On ne peut déclarer une variable et lui assigner une valeur à la même instruc
 ### Arrays
 On doit toujours déclarer un tableau en indiquant sa taille (non nulle). Aucune expression n'est tolérée dans la déclaration de la taille du tableau (donc les tailles négatives ne sont pas autorisées) et une taille nulle est une erreur sémantique.
 
-Lorsque les tableaux sont passsés en paramètres, leur taille ne doit pas être indiquées
+Lorsque les tableaux sont passsés en paramètres, leur taille ne doit pas être indiquées, et on donne l'adresse du tableau (le tableau n'est pas recopié).
 
 ```c
 int add(int array[]) {
@@ -106,7 +116,7 @@ Les structures de contrôles sont:
 * `if-else`
 * `while`
 
-La syntaxe est la même qu'en C. Les bloc d'instructions sans `{...}` sont supportés
+La syntaxe est la même qu'en C. Les bloc d'instructions sans `{...}` sont supportés.
 
 ```c
 int main(void) {
@@ -121,7 +131,7 @@ int main(void) {
 }
 ```
 
-Les conditions renseignées dans les structures de contrôles doivent être des `char`, des `int` ou des booléens (résultats de comparaisons ou opérations booléennes). Ainsi, le programme suivant déclenchera une erreur sémantique
+Les conditions renseignées dans les structures de contrôles doivent être des `char`, des `int` ou des booléens (résultats de comparaisons ou opérations booléennes). Ainsi, le programme suivant déclenchera une erreur sémantique.
 ```c
 int main(void) {
   int array[2];
@@ -133,14 +143,22 @@ int main(void) {
 *Erreur sémantique*
 
 ## Gestion des données
-Les deux types de données supportés sont les charactères `char` et les entiers `int`, ainsi que leur équivalents en array. Ces types sont codés sur 8 octets chacuns. **Toutes** les opérations sont castées en entier
+Les deux types de données supportés sont les charactères `char` et les entiers `int`, ainsi que leur équivalents en array. Ces types sont codés sur 8 octets chacuns. **Toutes** les opérations sont castées en entier.
 
 Il existe également `void` pour les fonctions ne retournant aucune valeur. On ne peut retourner un tableau d'entiers ou de charactères.
+
+Les tableaux sont des adresses mémoires stockées sur 8 octets.
 
 ## Tests
 Le fichier `runtest.sh` permet de faire tourner le compilateur sur une batterie de tests. Il peut être exécuté directement (`./runtest.sh`, attention aux droits d'exécution !) ou via la commande `make test` (qui donne les droits d'exécution sur le fichier).
 
-Ces tests ne s'assurent pas de l'exécution, mais uniquement de la syntaxe et de la sémantique.
+Les différents jeux de tests sont les suivants:
+* `test/good/` pour tester la validité de la syntaxe et de la sémantique
+* `test/sem-err/` pour les différentes erreurs sémantiques
+* `test/syn-err/` pour les erreurs de syntaxes
+* `test/warn` pour les codes produisant des warnings (mais qui peuvent tout de même être compilés).
+
+Ces tests ne s'assurent pas de l'exécution, mais uniquement de la syntaxe et de la sémantique, donc les tests dans `test/exec` sont uniquement fournis à titre indicatif.
 
 **Attention** : Travaillant avec WSL et Github et les espaces n'étants pas les mêmes entre Windows et Linux, il se peut que les retours à la ligne du script bash soient en CRLF et non en LF. Une rapide correction est d'ouvrir le fichier `runtests.sh` avec un éditeur et de le changer en sélectionnant tout le fichier.
 
@@ -179,12 +197,12 @@ Successfuls tests : 113/113
 ## Difficultées rencontrées
 
 ### Héritage du projet d'Analyse Syntaxique
-Suite au projet d'analyse syntaxique, beaucoup d'éléments ont changés. Tout d'abord, nous nous sommes apperçus que nous n'avions aucun label renseigné prorement sur les variables, fonctions, structures de contrôles, opérateurs ; et que les différents symboles étaient mal renseignés. C'est maintenant corrigé.
+Suite au projet d'analyse syntaxique, beaucoup d'éléments ont changés. Tout d'abord, nous nous sommes aperçus que nous n'avions aucun label renseigné prorement sur les variables, fonctions, structures de contrôles, opérateurs et que les différents symboles étaient mal renseignés. C'est maintenant corrigé.
 
 De plus, il y avait plusieurs labels en Bison qui n'étaient pas renseignés car nous n'en voyons pas l'utilité, mais ils sont essentiels en compilation. Par exemple, pour déterminer si une fonction à des paramètres ou non.
 
 ### Les types en sémantique
-Au début de la vérification des types, on savait si une variable ou une expression était un entier, un charactère ou un tableau, mais impossible de savoir quel type de tableau. Pour pouvoir supporter ces informations supplémentaires, la représentation des types à changé en cours de projet pour utiliser des masks binaires
+Au début de la vérification des types, on savait si une variable ou une expression était un entier, un charactère ou un tableau, mais impossible de savoir quel type de tableau. Pour pouvoir supporter ces informations supplémentaires, la représentation des types à changé en cours de projet pour utiliser des masques binaires.
 
 ```c
 #define T_NONE      0       // 0 << 0 - 0000 0001 
@@ -197,7 +215,7 @@ Au début de la vérification des types, on savait si une variable ou une expres
 *Extrait du fichier [types.h](../include/types.h)*
 
 ### Blocs d'instructions
-Il nous a fallu un peu de temps avant de pouvoir gérer prorement ces différents blocs :
+Il nous a fallu un peu de temps avant de pouvoir gérer proprement ces différents blocs :
 
 ```c
 if (...) {
@@ -213,6 +231,9 @@ if (...)
 else 
   ...
 ```
-Pour les gérer, nous avons du "déporter" une partie de notre boucle qui itère sur les instructions afin de pouvoir l'appeler depuis d'autres fonctions
+Pour les gérer, nous avons du "déporter" une partie de notre boucle qui itère sur les instructions afin de pouvoir l'appeler depuis d'autres fonctions.
+
+### Arguments des fonctions
+Il nous a fallu un peu de temps pour respecter complètement les conventions d'appels AMD 64, et elle a entrainé de grosses modifications dans le code, surtout pour la table des symboles pour les adresses. Deplus, il ne fallait pas oublier de supprimer de la pile les paramètres en trop (dans le cas où on a plus de 7 paramèters) lors du retour de fonction.
 ___
 Alves Rayan - Kies Rémy
