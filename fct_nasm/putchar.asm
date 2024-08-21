@@ -1,22 +1,29 @@
 global putchar
 section .text
 
+; Brief:
+;   print in stdout the given character
+; Arguments
+;   character to print
+; Returns
+;   N/A
 
-; registre d'argument de fonction : rdi
+; Used registers
+; rdi: argument that contains the character to print
 putchar:
-    ; convention d'appel AMD64
-    push rbp
-    mov rbp, rsp
+    ; AMD64 call conventions
+    push rbp        ; save back stack pointer
+    mov rbp, rsp    ; rbp = rsp
     
-    push rdi        ; on met sur la pile le caractère à afficher
+    push rdi        ; pushing the character to print on the stack
 
-    mov rsi, rsp    ; on met à rsi l'adresse source où est stockée le caractère
-    mov rdx, 1      ; taille de la variable à écrire
-    mov rax, 1      ; choix de la fonction write
+    mov rsi, rsp    ; rsi contains the address of the character to print
+    mov rdx, 1      ; size to print (in bytes)
+    mov rax, 1      ; choose the write function
     mov rdi, 1      ; stdout
-    syscall         ; appel à write
+    syscall
 
-    mov rsp, rbp    ; restauration de la pile
+    mov rsp, rbp    ; putting the stack back
     pop rbp
     
     ret

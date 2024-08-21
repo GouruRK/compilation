@@ -1,8 +1,16 @@
 global getchar
 section .text
-; registre de retour de fonction : rax
+; Breif 
+;   read a character from stdin
+; Arguments
+;   N/A
+; Returns
+;   the read character
+
+; Used registers
+; rax: contains the function return's value
 getchar:
-    ; convention d'appel AMD 64
+    ; AMD64 call conventions
     push    rbp
     mov     rbp, rsp       
     
@@ -11,8 +19,8 @@ getchar:
 
     mov     rax, 0          ; read
     mov     rdi, 0          ; stdin
-    mov     rsi, rsp        ; adresse de retour
-    mov     rdx, 1          ; taille de la lecture
+    mov     rsi, rsp        ; return address
+    mov     rdx, 1          ; size of the lecture (in bytes)
     syscall
     
     pop     rax

@@ -3,36 +3,43 @@ extern getchar
 section .text
 
 ; Brief:
-;    lit sur l'entrée standard un nombre 
-; Arguments:
-;   aucun
-; retourne:
-;   un int
+;    read a signed number from stdin
+; Arguments
+;   N/A
+; Returns
+;   integer
 
-; Registres utilisés
-; r12: flag si le nombre entré est négatif
-; r13: stocke le résultat temporaire
-; rax: valeurs de retour de 'getchar' et de 'getint'
+; Used registers
+; r12: flag that indicate if the number is negative
+; r13: store temporary results
+; rax: output values of 'getchar' and 'getint' function
 
 getint:
-    ; conventions d'appels AMD64 
-    push    rbp             ; sauvegarde le pointeur de base
+    ; AMD64 call conventions
+    push    rbp             ; save back stack pointer
     mov     rbp, rsp        ; rbp = rsp
 
-    call    getchar         ; récupère le premier character
+    call    getchar         ; get the first character
 
-    mov     r13, 0          ; Initialise le résultat
-    mov     r12, 0          ; Initialise les flags
+    mov     r13, 0          ; Initialise result
+    mov     r12, 0          ; Initialise flag
     
-    cmp     rax, '-'
-    jne     check           ; rax n'est pas '-', c'est donc un nombre. On passe directement à la conversion 
-    mov     r12, 1          ; r12 possède le flag 'nombre negatif' 
+    cmp     rax, '-'        ; check whether the first character is a negative
+                            ; sign
+    
+    ; check if the first given character is a negative sign. If so, sets flag to
+    ; 'r12' that the number is indeed negative. If not, the first character must
+    ; be a number, and we need to check if it really is before adding it to the
+    ; result
+
+    jne     check           ; not a negative sign, jump to check
+    mov     r12, 1          ; sets 'r12' flag 
 
 get_next_char:
-    call    getchar         ; récupère le prochain character dans rax
+    call    getchar         ; get the next character
 
 check:
-    ; On vérifie si le charactère est un chiffre/la saisie est terminée
+    ; check if the input is valid
 
     cmp     rax, 0
     je      final          ; rax == '\0'
@@ -42,7 +49,7 @@ check:
     jg      final          ; rax > '9'
 
 convert: 
-    ; Conversion du 'char' rax en int et ajout au résultat
+    ; Convert the input into decimal number
 
     imul    r13, 10        ; r13 *= 10
     sub     rax, '0'       ; rax = int(rax)
@@ -50,16 +57,16 @@ convert:
     jmp     get_next_char
 
 final:
-    ; Prépare la sortie de fonction
+    ; Prepare function exit
 
-    mov     rax, r13       ; on met le résultat dans le registre de retour
+    mov     rax, r13       ; put the result in the exit register
 
-    cmp     r12, 1         ; on regarde si le flag 'neg' sur r12 est renseigné
-    jne     quit           ; pas négatif, on quitte normalement
-    neg     rax            ; c'est négatif, on lui applique la fonction 'neg'
+    cmp     r12, 1         ; check if the negative flat is up
+    jne     quit           ; not up, exit normaly
+    neg     rax            ; is negative
 
 quit:
-    ; Détermine quelle sortie appeler en cas d'erreur et de sortie correcte
+    ; Determine how exiting the function: by triggering an error or normaly
 
     mov     rsp, rbp       ; restore stack
     pop     rbp
@@ -69,7 +76,7 @@ quit:
     ret
 
 exit_failure:
-    ; Sortie en cas d'erreur
+    ; In case of error
 
     mov     rax, 60        ; rax = 60
     mov     rdi, 5         ; rdi = 5

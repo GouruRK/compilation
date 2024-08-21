@@ -2,30 +2,38 @@ global putint
 extern putchar
 section .text
 
-; rax: int à afficher 
-; rbx: diviseur
-; rdx: reste de la division
-; r12: length
-putint:
-    ; convention d'appel AMD64
-    push    rbp
-    mov     rbp, rsp
+; Brief
+;   print on stdin a signed number
+; Arguments
+;   number to print
+; Returns
+;   N/A
 
-    mov     rax, rdi        ; sauvegarde de l'entier à afficher
+; Used registers
+; r12: length
+; rax: integier to print
+; rbx: dividend
+; rdx: quotient
+putint:
+    ; AMD64 call conventions
+    push    rbp             ; save the back stack pointer
+    mov     rbp, rsp        ; rbp = rsp
+
+    mov     rax, rdi        ; save the integer to print
     mov     rbx, 10         ; diviseur
     mov     r12, 0
 
     cmp     rax, 0
-    jge     loop_label      ; si l'entier à afficher est plus grand que 0, on l'affiche directement
+    jge     loop_label      ; if the integer is positive, skip the next lines
     
-    mov     rdi, '-'
+    mov     rdi, '-'        ; integer is negative, print the negative sign
     call    putchar
 
 loop_label:
     cmp     rax, 0
     je      print
 
-    mov     rdx, 0          ; initialise le reste
+    mov     rdx, 0          ; initialise quotient
 
     idiv    rbx             ; rax = rax // rbx, rdx = rax % rbx
     
@@ -49,6 +57,6 @@ print:
     jmp     print
 
 exit:
-    mov     rsp, rbp        ; restore pile
+    mov     rsp, rbp        ; restore stack
     pop     rbp
     ret

@@ -58,3 +58,4 @@ bin/*
 
 *.zip
 *.tar
+*.tar.gz

@@ -11,11 +11,6 @@ fct_nasm: %: %.o putchar.o getchar.o putint.o getint.o
 %.o: %.asm
 	nasm -f elf64 -o $@ $< 
 
-
-
 clean:
 	rm -rf *.o
 	rm -f test
-	rm -f fct_nasm
-
-	

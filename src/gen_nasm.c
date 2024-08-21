@@ -379,6 +379,7 @@ static int create_file(char* output) {
     char filename[64];
     snprintf(filename, 64, DEFAULT_PATH"%s.asm", output);
 
+    // set the global variable 'out' to the file's output
     out = fopen(filename, "w");
     return out != NULL;
 }
@@ -436,14 +437,14 @@ static void write_add_sub_mul(const Table* globals, const FunctionCollection* co
 
     if (!SECONDCHILD(tree)) { // unary plus and minus
         if (tree->val.ident[0] == '-') {
-            fprintf(out, "\n\t; negation unaire\n"
+            fprintf(out, "\n\t; unary negation\n"
                          "\tpop \trax\n"
                          "\tneg \trax\n"
                          "\tpush\trax\n");
         }
     } else {
         write_tree(globals, collection, fun, SECONDCHILD(tree));
-        fprintf(out, "\n\t; opération binaire (%c)\n"
+        fprintf(out, "\n\t; binary operator (%c)\n"
                      "\tpop \trcx\n"
                      "\tpop \trax\n"
                      "\t%s\trax, rcx\n"
@@ -459,17 +460,17 @@ static void write_div_mod(const Table* globals, const FunctionCollection* collec
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
     write_tree(globals, collection, fun, SECONDCHILD(tree));
     if(tree->val.ident[0] == '/') {
-        fprintf(out, "\n\t; division\n"
-                     "\tpop \trcx\t; diviseur\n"
+        fprintf(out, "\n\t; division operator\n"
+                     "\tpop \trcx\t; dividend\n"
                      "\tpop \trax\n"
-                     "\tcqo \t; initialise le reste\n"
+                     "\tcqo \t; initialise quotient\n"
                      "\tidiv\trcx\n"
                      "\tpush\trax\n");
     } else if(tree->val.ident[0] == '%') {
-        fprintf(out, "\n\t; modulo\n"
-                     "\tpop \trcx\t; diviseur\n"
+        fprintf(out, "\n\t; modulo operator\n"
+                     "\tpop \trcx\t; dividend\n"
                      "\tpop \trax\n"
-                     "\tcqo \t; initialise le reste\n"
+                     "\tcqo \t; initialise quotient\n"
                      "\tidiv\trcx\n"
                      "\tpush\trdx\n");
     }
@@ -485,7 +486,7 @@ static void write_arithmetic(const Table* globals, const FunctionCollection* col
 }
 
 static void write_function_exit(void) {
-    fprintf(out, "\n\t; retablissement de la pile avant retour\n"
+    fprintf(out, "\n\t; stack alignement before exiting the function\n"
                  "\tmov \trsp, rbp\n"
                  "\tpop \trbp\n"
                  "\tret\n");
@@ -495,29 +496,29 @@ static void write_return(const Table* globals, const FunctionCollection* collect
                          const Function* fun, const Node* tree) {
     if (fun->r_type != T_VOID) {
         write_tree(globals, collection, fun, FIRSTCHILD(tree));
-        fprintf(out, "\n\t; chargement de la valeur de retour\n" 
+        fprintf(out, "\n\t; return value loading\n" 
                      "\tpop \trax\n");
     }
     write_function_exit();
 }
 
 static void write_function(Function* fun) {
-    fprintf(out, "\n; fonction %s\n"
+    fprintf(out, "\n; function %s\n"
                  "%s:\n"
-                 "\t; sauvegarde du retour de pile\n"
+                 "\t; save stack return address\n"
                  "\tpush\trbp\n"
                  "\tmov \trbp, rsp\n",
                  fun->name, fun->name);
     
-    fprintf(out, "\n\t; On met les paramètres sur la pile\n");
+    fprintf(out, "\n\t; push parameters on the stack\n");
 
     for (int i = 0; i < fun->parameters.cur_len && param_registers[i]; i++) {
         fprintf(out, "\tpush\t%s\n", param_registers[i]);
     }
 
-    fprintf(out, "\n\t; allocation de mémoire pour les variables locales\n"
+    fprintf(out, "\n\t; allocate memory for local variables\n"
                  "\tsub \trsp, %d\n\n"
-                 "\t; corps de la fonction\n",
+                 "\t; function's body\n",
                  fun->locals.total_bytes);
 
 }
@@ -549,8 +550,8 @@ static void write_assign(const Table* globals, const FunctionCollection* collect
 
 static void write_parameters(const Table* globals, const FunctionCollection* collection,
                              const Function* fun, const Node* tree) {
-    //* We want to treat the first parameter at the very last
-    //* So parameters are handled in reverse order
+    // We want to treat the first parameter at the very last
+    // So parameters are handled in reverse order
 
     if (!tree) return;
     write_parameters(globals, collection, fun, tree->nextSibling);
@@ -563,24 +564,25 @@ static void write_function_call(const Table* globals, const FunctionCollection* 
     
     if (FIRSTCHILD(tree)->label == ListExp) {
         write_parameters(globals, collection, fun, FIRSTCHILD(FIRSTCHILD(tree)));
-        fprintf(out, "\n\t; on met les valeurs dans leurs registres\n");
+        fprintf(out, "\n\t; move the first six parameters from the stack to "
+                     "their register according to AMD64 conventions\n");
         
         for (int i = 0; i < to_call->parameters.cur_len && i < 6; i++) {
             fprintf(out, "\tpop \t%s\n", param_registers[i]);
         }
     }
-    fprintf(out, "\n\t; appel de fonction\n"
+    fprintf(out, "\n\t; call of the function\n"
                  "\tcall\t%s\n",
                  tree->val.ident);
 
     if (to_call->parameters.cur_len > 6) {
-        fprintf(out, "\n\t; on enleve les parametres qui sont restes dans la pile\n"
+        fprintf(out, "\n\t; remove parameters that have stayed in the stack\n"
                      "\tadd \trsp, %d\n",
                      (to_call->parameters.cur_len - 6)*8);
     }
 
     if (to_call->r_type != T_VOID) {
-        fprintf(out, "\n\t; on push la valeur de retour\n"
+        fprintf(out, "\n\t; pushing the return value\n"
                      "\tpush\trax\n");
     }
 }
@@ -725,7 +727,7 @@ static void write_comp(const Table* globals, const FunctionCollection* collectio
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
     write_tree(globals, collection, fun, SECONDCHILD(tree));
 
-    fprintf(out, "\n\t; chargement des valeurs pour la comparaison\n"
+    fprintf(out, "\n\t; loading values to compare them\n"
                  "\tpop \trcx\n"
                  "\tpop \trax\n");
     
@@ -765,18 +767,20 @@ static void write_and(const Table* globals, const FunctionCollection* collection
     int nlabel = next_free_label();
     int ncontinue = next_free_label();
 
-    fprintf(out, "\n\t; evaluation d'un 'et' (&&)\n"
-                 "\n\t; evaluation du membre gauche\n");
+    fprintf(out, "\n\t; begin evaluation of an 'and' (&&)\n"
+                 "\n\t; evaluation of the left member\n");
 
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
 
-    fprintf(out, "\n\t; evaluation du 'et' (&&)\n"
+    fprintf(out, "\n\t; lazy evaluation of the 'and' (&&)\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 0\n"
-                 "\tjne \tlabel%d\n"
+                 "\tjne \tlabel%d\t; left member is a non-zero value: we can "
+                    "evaluate the right member\n"
                  "\tpush\t0\n"
-                 "\tjmp \tcontinue%d\n"
-                 "\tpush\t1\n"
+                 "\tjmp \tcontinue%d\t; left member is zero: there is no need "
+                    "to evaluate the right member since we already know the "
+                    "expression is false\n"
                  "\tlabel%d:\n",
                  nlabel, ncontinue, nlabel);
 
@@ -791,8 +795,8 @@ static void write_or(const Table* globals, const FunctionCollection* collection,
     int nlabel = next_free_label();
     int ncontinue = next_free_label();
 
-    fprintf(out, "\n\t; evaluation d'un 'ou' (||)\n"
-                 "\n\t; evaluation du membre gauche\n");
+    fprintf(out, "\n\t; begin evaluation of an 'or' (||)\n"
+                 "\n\t; evaluation of the left member\n");
 
     // write condition
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
@@ -804,10 +808,12 @@ static void write_or(const Table* globals, const FunctionCollection* collection,
     fprintf(out, "\n\t; evaluation du 'or' (||)\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 1\n"
-                 "\tjne \tlabel%d\n"
+                 "\tjne \tlabel%d\t; left member is a zero: we need to "
+                    "evaluate the right member\n"
                  "\tpush\t1\n"
-                 "\tjmp \tcontinue%d\n"
-                 "\tpush\t0\n"
+                 "\tjmp \tcontinue%d\t; left member is a non-zero value: there "
+                    "is no need to evaluate the right member since we know "
+                    "the condition is already true\n"
                  "\tlabel%d:\n",
                  nlabel, ncontinue, nlabel);
     
@@ -823,14 +829,14 @@ static void write_neg(const Table* globals, const FunctionCollection* collection
     int ncontinue = next_free_label();
     int nlabel = next_free_label();
 
-    fprintf(out, "\n\t; evaluation d'un 'non' (!)\n"
-                 "\t; label%d -> si 0 on met a 1\n"
-                 "\t; continue%d -> suite du code\n",
+    fprintf(out, "\n\t; begin evaluating a 'not' (!)\n"
+                 "\t; label%d -> if 0 we push a 1\n"
+                 "\t; continue%d -> otherwise\n",
                  nlabel, ncontinue);
 
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
 
-    fprintf(out, "\n\t; evaluation du 'non' (!)\n"
+    fprintf(out, "\n\t; evaluation of the 'not' (!)\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 0\n"
                  "\tje  \tlabel%d\n"
@@ -847,15 +853,15 @@ static void write_if(const Table* globals, const FunctionCollection* collection,
     int ncontinue = next_free_label();
     int nelse = next_free_label();
 
-    fprintf(out, "\n\t; evaluation d'un 'if'\n"
-                 "\t; continue%d -> code apres la condition\n"
-                 "\t; else%d -> code du else\n", 
+    fprintf(out, "\n\t; begin evaluation of an 'if'\n"
+                 "\t; continue%d -> code after the condition\n"
+                 "\t; else%d -> code of else\n", 
                  ncontinue, nelse);
     
     // evaluate condition
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
 
-    fprintf(out, "\n\t; evaluation de la condition du if\n"
+    fprintf(out, "\n\t; evaluation of the 'if' condition\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 0\n"
                  "\tje  \telse%d\n",
@@ -878,16 +884,16 @@ static void write_while(const Table* globals, const FunctionCollection* collecti
     int ncontinue = next_free_label();
     int nhead = next_free_label();
 
-    fprintf(out, "\n\t; evaluation d'un 'while'\n"
-                 "\t; continue%d -> code apres un while\n"
-                 "\t; head%d -> tete de boucle\n"
+    fprintf(out, "\n\t; begin evaluating a 'while'\n"
+                 "\t; continue%d -> code after the 'while'\n"
+                 "\t; head%d -> head of loop\n"
                  "\thead%d:\n",
                  ncontinue, nhead, nhead);
 
     // evaluate condition
     write_tree(globals, collection, fun, FIRSTCHILD(tree));
 
-    fprintf(out, "\n\t; evaluation de la condition du while\n"
+    fprintf(out, "\n\t; evaluation of the 'while' condition\n"
                  "\tpop \trax\n"
                  "\tcmp \trax, 0\n"
                  "\tje  \tcontinue%d\t;\n",
@@ -902,7 +908,7 @@ static void write_while(const Table* globals, const FunctionCollection* collecti
 }
 
 static void write_num(const Node* tree) {
-    fprintf(out, "\n\t; lecture d'entier\n"
+    fprintf(out, "\n\t; pushing integer\n"
                  "\tpush\t%d\n",
                  tree->val.num);
 }
@@ -922,11 +928,11 @@ static void write_character(const Node* tree) {
     }
 
     if (sym == -1) {
-        fprintf(out, "\n\t; lecture de charactere\n"
+        fprintf(out, "\n\t; pushing character\n"
                      "\tpush\t%s\n",
                      tree->val.ident);
     } else {
-        fprintf(out, "\n\t; lecture de charactere\n"
+        fprintf(out, "\n\t; pushing character\n"
                      "\tpush\t%d\n",
                      sym);
     }
